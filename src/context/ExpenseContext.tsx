@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Expense } from '../types/expense.types';
-import { demoExpenses } from '../data/demoExpenses';
 import { supabase } from '../lib/supabase';
 
 interface ExpenseContextType {
@@ -34,8 +33,8 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        // If no user is logged in, use demo data
-        setExpenses(demoExpenses);
+        // If no user is logged in, show empty state
+        setExpenses([]);
         setLoading(false);
         return;
       }
@@ -52,8 +51,8 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error('Error fetching expenses:', err);
       setError(err instanceof Error ? err.message : 'Failed to load expenses');
-      // Fallback to demo data on error
-      setExpenses(demoExpenses);
+      // Use empty array on error
+      setExpenses([]);
     } finally {
       setLoading(false);
     }
@@ -120,7 +119,9 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const loadDemoData = () => {
+  const loadDemoData = async () => {
+    // Import demo data only when explicitly requested
+    const { demoExpenses } = await import('../data/demoExpenses');
     setExpenses(demoExpenses);
   };
 

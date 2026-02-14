@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Stock } from '../types/portfolio.types';
-import { demoStocks } from '../data/demoPortfolio';
 import { supabase } from '../lib/supabase';
 
 interface PortfolioContextType {
@@ -35,8 +34,8 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        // If no user is logged in, use demo data
-        setStocks(demoStocks);
+        // If no user is logged in, show empty state
+        setStocks([]);
         setLoading(false);
         return;
       }
@@ -53,8 +52,8 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error('Error fetching stocks:', err);
       setError(err instanceof Error ? err.message : 'Failed to load portfolio');
-      // Fallback to demo data on error
-      setStocks(demoStocks);
+      // Use empty array on error
+      setStocks([]);
     } finally {
       setLoading(false);
     }
@@ -177,7 +176,9 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const loadDemoData = () => {
+  const loadDemoData = async () => {
+    // Import demo data only when explicitly requested
+    const { demoStocks } = await import('../data/demoPortfolio');
     setStocks(demoStocks);
   };
 
