@@ -1,42 +1,53 @@
 import { useMemo } from 'react';
 import { useExpenses } from '../../context/ExpenseContext';
-import { getMonthYearKey, getMonthName } from '../../utils/dateHelpers';
-import { formatCurrency } from '../../utils/formatters';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+
+const COLORS = {
+  Food: '#10B981',
+  Transport: '#3B82F6',
+  Shopping: '#F59E0B',
+  Bills: '#EF4444',
+  Entertainment: '#8B5CF6',
+  Other: '#6B7280',
+};
 
 export function MonthlyChart() {
   const { expenses } = useExpenses();
 
-  const monthlyData = useMemo(() => {
-    // Group expenses by month
-    const groupedByMonth = expenses.reduce((acc, expense) => {
-      const monthKey = getMonthYearKey(expense.date);
-      if (!acc[monthKey]) {
-        acc[monthKey] = 0;
+  const categoryData = useMemo(() => {
+    // Get current month expenses
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const monthExpenses = expenses.filter(e => e.date.startsWith(currentMonth));
+
+    // Group by category
+    const groupedByCategory = monthExpenses.reduce((acc, expense) => {
+      if (!acc[expense.category]) {
+        acc[expense.category] = 0;
       }
-      acc[monthKey] += expense.amount;
+      acc[expense.category] += expense.amount;
       return acc;
     }, {} as Record<string, number>);
 
-    // Convert to array and sort by date (most recent first)
-    const monthlyArray = Object.entries(groupedByMonth)
-      .map(([monthKey, amount]) => ({
-        monthKey,
-        month: getMonthName(monthKey + '-01'),
-        amount,
-      }))
-      .sort((a, b) => b.monthKey.localeCompare(a.monthKey))
-      .slice(0, 3) // Last 3 months
-      .reverse(); // Oldest to newest for chart
+    // Calculate total
+    const total = Object.values(groupedByCategory).reduce((sum, val) => sum + val, 0);
 
-    return monthlyArray;
+    // Convert to array with percentages
+    return Object.entries(groupedByCategory)
+      .map(([category, amount]) => ({
+        name: category,
+        value: amount,
+        percentage: total > 0 ? ((amount / total) * 100).toFixed(1) : '0',
+      }))
+      .sort((a, b) => b.value - a.value);
   }, [expenses]);
 
-  if (monthlyData.length === 0) {
+  const totalSpent = categoryData.reduce((sum, item) => sum + item.value, 0);
+
+  if (categoryData.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Spending</h3>
-        <p className="text-gray-500 text-center py-8">No expense data available</p>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Spending by Category</h3>
+        <p className="text-gray-500 text-center py-8">No expense data for this month</p>
       </div>
     );
   }
@@ -44,26 +55,61 @@ export function MonthlyChart() {
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        Monthly Spending (Last 3 Months)
+        Spending by Category
       </h3>
       
+      <div className="text-center mb-4">
+        <p className="text-sm text-gray-600">Total This Month</p>
+        <p className="text-2xl font-bold text-gray-900">
+          ₹{totalSpent.toLocaleString('en-IN')}
+        </p>
+      </div>
+
       <ResponsiveContainer width="100%" height={250}>
-        <BarChart data={monthlyData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="month" />
-          <YAxis tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`} />
-          <Tooltip formatter={(value: number | undefined) => value !== undefined ? formatCurrency(value) : ''} />
-          <Bar dataKey="amount" fill="#3B82F6" />
-        </BarChart>
+        <PieChart>
+          <Pie
+            data={categoryData}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            label={(entry) => entry.percent ? `${(entry.percent * 100).toFixed(1)}%` : ''}
+            outerRadius={80}
+            fill="#8884d8"
+            dataKey="value"
+          >
+            {categoryData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[entry.name as keyof typeof COLORS] || COLORS.Other} />
+            ))}
+          </Pie>
+          <Tooltip 
+            formatter={(value: number | undefined) => value !== undefined ? `₹${value.toLocaleString('en-IN')}` : ''}
+          />
+          <Legend 
+            verticalAlign="bottom" 
+            height={36}
+            formatter={(value, entry: any) => `${value} (${entry.payload.percentage}%)`}
+          />
+        </PieChart>
       </ResponsiveContainer>
 
-      <div className="mt-4 grid grid-cols-3 gap-4">
-        {monthlyData.map(data => (
-          <div key={data.monthKey} className="text-center p-3 bg-blue-50 rounded-lg">
-            <p className="text-xs text-gray-600 mb-1">{data.month}</p>
-            <p className="text-lg font-bold text-blue-600">
-              {formatCurrency(data.amount, false)}
-            </p>
+      <div className="mt-4 space-y-2">
+        {categoryData.map((item) => (
+          <div key={item.name} className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: COLORS[item.name as keyof typeof COLORS] || COLORS.Other }}
+              />
+              <span className="text-gray-700">{item.name}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="font-semibold text-gray-900">
+                ₹{item.value.toLocaleString('en-IN')}
+              </span>
+              <span className="text-gray-500 w-12 text-right">
+                {item.percentage}%
+              </span>
+            </div>
           </div>
         ))}
       </div>

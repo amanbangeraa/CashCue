@@ -1,16 +1,18 @@
-import { TrendingUp, TrendingDown, Wallet, PiggyBank } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, Calculator, DollarSign } from 'lucide-react';
 
 interface NavbarProps {
-  currentPage: 'dashboard' | 'portfolio' | 'tax-analysis' | 'expenses';
-  onNavigate: (page: 'dashboard' | 'portfolio' | 'tax-analysis' | 'expenses') => void;
+  currentPage: 'dashboard' | 'portfolio' | 'tax-analysis' | 'expenses' | 'budget' | 'income';
+  onNavigate: (page: 'dashboard' | 'portfolio' | 'tax-analysis' | 'expenses' | 'budget' | 'income') => void;
 }
 
 export function Navbar({ currentPage, onNavigate }: NavbarProps) {
   const navItems = [
     { id: 'dashboard' as const, label: 'Dashboard', icon: TrendingUp },
+    { id: 'income' as const, label: 'Income', icon: DollarSign },
+    { id: 'expenses' as const, label: 'Expenses', icon: PiggyBank },
+    { id: 'budget' as const, label: 'Budget', icon: Calculator },
     { id: 'portfolio' as const, label: 'Portfolio', icon: Wallet },
     { id: 'tax-analysis' as const, label: 'Tax Analysis', icon: TrendingDown },
-    { id: 'expenses' as const, label: 'Expenses', icon: PiggyBank },
   ];
 
   return (

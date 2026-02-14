@@ -64,3 +64,38 @@ CREATE POLICY "Users can delete their own stocks"
 CREATE INDEX IF NOT EXISTS expenses_user_id_idx ON expenses(user_id);
 CREATE INDEX IF NOT EXISTS expenses_date_idx ON expenses(date);
 CREATE INDEX IF NOT EXISTS stocks_user_id_idx ON stocks(user_id);
+
+-- Create budget_configs table
+CREATE TABLE IF NOT EXISTS budget_configs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users NOT NULL,
+  monthly_salary NUMERIC(12, 2) NOT NULL,
+  monthly_savings_goal NUMERIC(12, 2) NOT NULL,
+  month TEXT NOT NULL, -- Format: YYYY-MM
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, month)
+);
+
+-- Enable Row Level Security
+ALTER TABLE budget_configs ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for budget_configs
+CREATE POLICY "Users can view their own budget configs"
+  ON budget_configs FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own budget configs"
+  ON budget_configs FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own budget configs"
+  ON budget_configs FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own budget configs"
+  ON budget_configs FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- Create index for better performance
+CREATE INDEX IF NOT EXISTS budget_configs_user_id_month_idx ON budget_configs(user_id, month);
