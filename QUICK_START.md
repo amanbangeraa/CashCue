@@ -1,188 +1,272 @@
-# 🚀 Quick Start Guide - TaxSaver Portfolio Tracker
+# 🚀 Quick Start Guide - CashCue with Supabase
 
-## Current Status: ✅ RUNNING
-**URL**: http://localhost:5173/
+This guide will help you set up CashCue with Supabase database integration.
 
----
+## 📋 Prerequisites
 
-## 📋 Quick Commands
+- Node.js (v18 or higher)
+- npm or yarn
+- A Supabase account (free tier available)
+
+## 🔧 Setup Steps
+
+### 1. Install Dependencies
 
 ```bash
-# Start dev server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Install dependencies (if needed)
 npm install
 ```
 
----
+### 2. Create Supabase Project
 
-## 🎯 Demo Flow (3 minutes)
+1. Go to [supabase.com](https://supabase.com) and sign up/login
+2. Click **"New Project"**
+3. Fill in project details:
+   - **Name**: CashCue (or any name)
+   - **Database Password**: Choose a strong password
+   - **Region**: Select closest to your location
+4. Wait for project to be provisioned (~2 minutes)
 
-### 1. Open Dashboard (15 sec)
-- Show hero with tax savings number
-- Point to 4 stat cards
-- Click "Analyze My Portfolio for Tax Savings"
+### 3. Set Up Database Schema
 
-### 2. Tax Analysis Page ⭐ (90 sec)
-**This is your killer feature!**
-- Before card: "Current Tax Liability: ₹3,500"
-- After card: "After Harvesting: ₹0"
-- Big savings number: "YOU SAVE: ₹3,500"
-- Scroll down to harvest plan
-- Show individual stock recommendations
-- Point out: "Sell Wipro, save ₹2,600"
-- Mention rebuy suggestion
+1. In your Supabase dashboard, go to **SQL Editor**
+2. Click **"New Query"**
+3. Copy and paste this SQL schema:
 
-### 3. Portfolio Page (30 sec)
-- Show table with 9 stocks
-- Point to green rows (gains) and red rows (losses)
-- Show STCG/LTCG badges
-- Demo filters (Gainers, Losers, STCG, LTCG)
+```sql
+-- Create expenses table
+CREATE TABLE expenses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users NOT NULL,
+  date DATE NOT NULL,
+  category TEXT NOT NULL,
+  amount NUMERIC(10, 2) NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-### 4. Expenses (15 sec)
-- "Bonus: track expenses for complete picture"
-- Show monthly chart
-- "Back to the main value—tax savings"
+-- Create stocks/portfolio table
+CREATE TABLE stocks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users NOT NULL,
+  stock_name TEXT NOT NULL,
+  ticker_symbol TEXT NOT NULL,
+  quantity INTEGER NOT NULL,
+  buy_price NUMERIC(10, 2) NOT NULL,
+  current_price NUMERIC(10, 2) NOT NULL,
+  buy_date DATE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
----
+-- Enable Row Level Security
+ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stocks ENABLE ROW LEVEL SECURITY;
 
-## 💡 Key Talking Points
+-- Create policies for expenses
+CREATE POLICY "Users can view their own expenses"
+  ON expenses FOR SELECT
+  USING (auth.uid() = user_id);
 
-### Problem
-"Indian investors lose thousands in unnecessary tax because they don't know about tax loss harvesting"
+CREATE POLICY "Users can insert their own expenses"
+  ON expenses FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
 
-### Solution
-"Automated analysis that shows exactly which stocks to sell and how much you'll save"
+CREATE POLICY "Users can update their own expenses"
+  ON expenses FOR UPDATE
+  USING (auth.uid() = user_id);
 
-### Innovation
-"First tool to make tax loss harvesting accessible to regular Indian investors, not just HNIs with CAs"
+CREATE POLICY "Users can delete their own expenses"
+  ON expenses FOR DELETE
+  USING (auth.uid() = user_id);
 
-### Impact
-"Demo portfolio shows ₹3,500 savings. Scale to millions of Indian investors = crores saved"
+-- Create policies for stocks
+CREATE POLICY "Users can view their own stocks"
+  ON stocks FOR SELECT
+  USING (auth.uid() = user_id);
 
----
+CREATE POLICY "Users can insert their own stocks"
+  ON stocks FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
 
-## 📊 Demo Data Quick Ref
+CREATE POLICY "Users can update their own stocks"
+  ON stocks FOR UPDATE
+  USING (auth.uid() = user_id);
 
-**Portfolio:**
-- 9 stocks total
-- 5 winners, 4 losers
-- Total invested: ~₹6L
-- Current value: ~₹6.1L
-- Tax savings opportunity: ₹3,500
+CREATE POLICY "Users can delete their own stocks"
+  ON stocks FOR DELETE
+  USING (auth.uid() = user_id);
 
-**Key Losers (for harvesting):**
-- Paytm: -₹48,000 (STCG) → saves ₹9,600
-- Wipro: -₹13,000 (STCG) → saves ₹2,600
-- Zomato: -₹12,000 (STCG) → saves ₹2,400
-- Tech Mahindra: -₹15,000 (LTCG) → saves ₹1,875
+-- Create indexes for better performance
+CREATE INDEX expenses_user_id_idx ON expenses(user_id);
+CREATE INDEX expenses_date_idx ON expenses(date);
+CREATE INDEX stocks_user_id_idx ON stocks(user_id);
+```
 
----
+4. Click **"Run"** to execute the schema
 
-## 🎨 Visual Elements to Highlight
+### 4. Configure Environment Variables
 
-1. **Hero Section**: Large, bold tax savings number
-2. **Before/After Cards**: Visual transformation with arrow
-3. **Color Coding**: Green = good, Red = loss/tax, Blue = neutral
-4. **STCG/LTCG Badges**: Automatic classification
-5. **Charts**: Interactive, professional Recharts
-6. **Harvest Plan**: Step-by-step instructions
+1. In your Supabase dashboard, go to **Settings** → **API**
+2. Copy these values:
+   - **Project URL** (looks like: `https://xxxxx.supabase.co`)
+   - **anon public key** (starts with `eyJ...`)
 
----
+3. Create a `.env` file in your project root:
 
-## 🔥 Unique Selling Points
+```bash
+cp .env.example .env
+```
 
-1. **Quantified Value**: Shows exact ₹ savings, not just %
-2. **Actionable**: Tells you exactly what to do
-3. **Indian-Specific**: Implements actual STCG/LTCG rules
-4. **Educational**: Explains complex tax rules simply
-5. **Complete Solution**: Entry + Analysis in one place
-6. **Production-Ready**: Professional UI, not a prototype
+4. Edit `.env` and add your Supabase credentials:
 
----
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
+```
 
-## ⚡ Quick Fixes (if needed)
+### 5. Enable Authentication (Optional but Recommended)
 
-### If dev server is down:
+1. In Supabase dashboard, go to **Authentication** → **Providers**
+2. Enable **Email** provider
+3. Configure email templates if needed
+4. For development, you can disable email confirmation:
+   - Go to **Authentication** → **Settings**
+   - Uncheck **"Enable email confirmations"**
+
+### 6. Run the Application
+
 ```bash
 npm run dev
 ```
 
-### If port 5173 is busy:
-```bash
-# Vite will auto-assign next available port
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+## 🔐 Authentication Setup
+
+To add user authentication to your app, you'll need to create login/signup components. Here's a simple example:
+
+### Create Auth Component
+
+Create `src/components/auth/LoginForm.tsx`:
+
+```typescript
+import { useState } from 'react';
+import { supabase } from '../../lib/supabase';
+
+export function LoginForm() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) alert(error.message);
+    else alert('Check your email for confirmation!');
+    setLoading(false);
+  };
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) alert(error.message);
+    setLoading(false);
+  };
+
+  return (
+    <div className="max-w-md mx-auto p-6">
+      <form className="space-y-4">
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full px-4 py-2 border rounded"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full px-4 py-2 border rounded"
+        />
+        <div className="flex gap-2">
+          <button
+            onClick={handleSignIn}
+            disabled={loading}
+            className="flex-1 bg-blue-500 text-white py-2 rounded"
+          >
+            Sign In
+          </button>
+          <button
+            onClick={handleSignUp}
+            disabled={loading}
+            className="flex-1 bg-green-500 text-white py-2 rounded"
+          >
+            Sign Up
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
 ```
 
-### If charts don't show:
-- Refresh page (F5)
-- Check browser console for errors
+## 🎯 How It Works
 
-### If demo data is missing:
-- Click "Load Demo Data" in Portfolio page
-- Or clear localStorage and refresh
+### Without Authentication
+- App uses demo data by default
+- Data is stored locally in component state
+- Perfect for testing and development
 
----
+### With Authentication
+- Users must sign up/login
+- Data is automatically synced with Supabase
+- Each user only sees their own data (via Row Level Security)
+- Data persists across devices
 
-## 🎤 30-Second Pitch
+## 📊 Data Migration
 
-"Most Indian investors don't realize they're sitting on hidden tax savings. TaxSaver Portfolio Tracker analyzes your holdings and shows exactly which stocks to sell to minimize capital gains tax. Our demo portfolio reveals ₹3,500 in savings through smart tax loss harvesting—completely automated, completely accurate. Tax-smart investing isn't just for the wealthy anymore."
+To migrate existing localStorage data to Supabase:
 
----
+1. Export your current data (you can add this temporarily to your app)
+2. Sign up/login to your account
+3. Import the data using the add functions
 
-## 📱 Page Shortcuts
+## 🔍 Troubleshooting
 
-- **Dashboard**: Main hero, stat cards, quick links
-- **Portfolio**: Stock table, add/manage holdings
-- **Tax Analysis**: ⭐ THE KILLER FEATURE - Harvest recommendations
-- **Expenses**: Minimal expense tracking
+### "Missing Supabase environment variables"
+- Make sure `.env` file exists in project root
+- Check that variable names start with `VITE_`
+- Restart dev server after changing `.env`
 
----
+### "Row Level Security policy violation"
+- User must be logged in to insert/update data
+- Check that auth is working: `await supabase.auth.getUser()`
 
-## 🎯 Judge Questions - Prepared Answers
+### Database connection fails
+- Verify Project URL is correct
+- Check anon key is the **public anon** key, not service role key
+- Ensure project is not paused (Supabase pauses inactive projects)
 
-**Q: How do you get stock prices?**
-A: Currently hardcoded for demo. Production would integrate Alpha Vantage or Yahoo Finance API.
+## 🚀 Next Steps
 
-**Q: What about wash sale rules?**
-A: Great question! India doesn't have wash sale rules yet, so you can rebuy immediately. When implemented, we'll add a checker.
+1. **Add Authentication UI**: Create login/signup pages
+2. **Add Loading States**: Show spinners while data loads
+3. **Add Error Handling**: Display error messages to users
+4. **Enable Real-time**: Subscribe to database changes
+5. **Add User Profile**: Store user preferences
 
-**Q: Why not just show percentage?**
-A: Psychology! ₹3,500 saved is more tangible than "0.5% optimization". We show both.
+## 📚 Resources
 
-**Q: How do you handle multiple portfolios?**
-A: Current version is single portfolio. V2 would add multi-portfolio support with cloud storage.
+- [Supabase Documentation](https://supabase.com/docs)
+- [Supabase React Tutorial](https://supabase.com/docs/guides/getting-started/tutorials/with-react)
+- [Row Level Security Guide](https://supabase.com/docs/guides/auth/row-level-security)
 
-**Q: Is the tax calculation accurate?**
-A: Yes! Implements actual STCG (20%) and LTCG (12.5% above ₹1.25L) rules with proper loss offsetting.
+## 🆘 Need Help?
 
----
-
-## ✅ Pre-Demo Checklist
-
-- [ ] Dev server running (http://localhost:5173/)
-- [ ] Browser window open and ready
-- [ ] Demo data loaded (should be automatic)
-- [ ] Practiced demo flow (3 min)
-- [ ] Know your key talking points
-- [ ] Prepared for judge questions
-- [ ] Confident smile 😊
-
----
-
-## 🎊 YOU'RE READY!
-
-**Time to shine! Go win that hackathon!** 🏆
-
----
-
-**Last Updated**: February 14, 2026  
-**Status**: Production Ready  
-**Version**: 1.0.0  
-**Made with ❤️ for Indian Investors**
+- Check [Supabase Discord](https://discord.supabase.com)
+- Review [GitHub Issues](https://github.com/supabase/supabase/issues)
+- Read the error messages in browser console
+ 
