@@ -1,0 +1,167 @@
+import { useMemo, useState } from 'react';
+import { Trash2 } from 'lucide-react';
+import { usePortfolio } from '../../context/PortfolioContext';
+import { calculateStockMetrics } from '../../utils/taxCalculations';
+import { formatCurrency, formatPercentage, formatWithSign, getGainLossColor, getGainLossBgColor } from '../../utils/formatters';
+import { formatDate } from '../../utils/dateHelpers';
+
+type FilterType = 'all' | 'gainers' | 'losers' | 'stcg' | 'ltcg';
+
+export function PortfolioTable() {
+  const { stocks, removeStock } = usePortfolio();
+  const [filter, setFilter] = useState<FilterType>('all');
+
+  const stocksWithMetrics = useMemo(() => {
+    return stocks.map(calculateStockMetrics);
+  }, [stocks]);
+
+  const filteredStocks = useMemo(() => {
+    return stocksWithMetrics.filter(stock => {
+      switch (filter) {
+        case 'gainers':
+          return stock.gainLoss > 0;
+        case 'losers':
+          return stock.gainLoss < 0;
+        case 'stcg':
+          return stock.taxType === 'STCG';
+        case 'ltcg':
+          return stock.taxType === 'LTCG';
+        default:
+          return true;
+      }
+    });
+  }, [stocksWithMetrics, filter]);
+
+  if (stocks.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+        <p className="text-gray-500">No stocks in portfolio. Add your first stock to get started!</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm">
+      {/* Filter Buttons */}
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex space-x-2">
+          {(['all', 'gainers', 'losers', 'stcg', 'ltcg'] as FilterType[]).map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                filter === f
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {f.charAt(0).toUpperCase() + f.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Stock
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Quantity
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Buy Price
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Current Price
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Invested
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Current Value
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Gain/Loss
+              </th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tax Type
+              </th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredStocks.map(stock => (
+              <tr key={stock.id} className={`${getGainLossBgColor(stock.gainLoss)} hover:opacity-75 transition-opacity`}>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">{stock.stockName}</div>
+                    <div className="text-xs text-gray-500">{stock.tickerSymbol}</div>
+                    <div className="text-xs text-gray-400">{formatDate(stock.buyDate)}</div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                  {stock.quantity}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                  {formatCurrency(stock.buyPrice)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                  {formatCurrency(stock.currentPrice)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                  {formatCurrency(stock.investedValue)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                  {formatCurrency(stock.currentValue)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right">
+                  <div className={`text-sm font-semibold ${getGainLossColor(stock.gainLoss)}`}>
+                    {formatWithSign(stock.gainLoss)}
+                  </div>
+                  <div className={`text-xs ${getGainLossColor(stock.gainLoss)}`}>
+                    ({stock.gainLoss > 0 ? '+' : ''}{formatPercentage(stock.gainLossPercentage)})
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      stock.taxType === 'STCG'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-green-100 text-green-800'
+                    }`}
+                  >
+                    {stock.taxType}
+                  </span>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {stock.holdingPeriodDays} days
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <button
+                    onClick={() => removeStock(stock.id)}
+                    className="text-red-600 hover:text-red-900"
+                    title="Remove stock"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {filteredStocks.length === 0 && (
+        <div className="p-8 text-center text-gray-500">
+          No stocks match the current filter.
+        </div>
+      )}
+    </div>
+  );
+}
