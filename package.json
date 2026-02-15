@@ -8,9 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "verify-firebase": "node verify-firebase.cjs",
-    "seed-portfolio": "tsx seed-portfolio.ts",
-    "seed-optimized": "tsx seed-optimized-portfolio.ts"
+    "seed-portfolio": "tsx seed-portfolio.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
