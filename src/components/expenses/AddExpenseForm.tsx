@@ -95,12 +95,12 @@ export function AddExpenseForm() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Expense</h3>
+      <div className="bg-[#111827] rounded-xl border border-[#1f2937] p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Add Expense</h3>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-semibold text-emerald-100 mb-1">
               Amount (₹) *
             </label>
             <input
@@ -110,19 +110,19 @@ export function AddExpenseForm() {
               step="0.01"
               value={formData.amount}
               onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 rounded-lg bg-[#0d1117] border border-[#1f2937] text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
               placeholder="e.g., 500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-semibold text-emerald-100 mb-1">
               Category *
             </label>
             <select
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value as ExpenseCategory })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 rounded-lg bg-[#0d1117] border border-[#1f2937] text-slate-100 focus:outline-none focus:border-emerald-500"
             >
               {categories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
@@ -131,7 +131,7 @@ export function AddExpenseForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-semibold text-emerald-100 mb-1">
               Date *
             </label>
             <input
@@ -139,12 +139,12 @@ export function AddExpenseForm() {
               required
               value={formData.date}
               onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 rounded-lg bg-[#0d1117] border border-[#1f2937] text-slate-100 focus:outline-none focus:border-emerald-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-semibold text-emerald-100 mb-1">
               Description (Optional)
             </label>
             <input
@@ -152,14 +152,14 @@ export function AddExpenseForm() {
               maxLength={50}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 rounded-lg bg-[#0d1117] border border-[#1f2937] text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
               placeholder="e.g., Dinner at restaurant"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+            className="w-full flex items-center justify-center px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors font-semibold"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Expense
@@ -171,55 +171,55 @@ export function AddExpenseForm() {
       {showFeedback && feedbackData && (
         <div className={`rounded-lg p-4 border ${
           feedbackData.status === 'danger' 
-            ? 'bg-red-50 border-red-200' 
+            ? 'bg-red-500/20 border-red-500/30' 
             : feedbackData.status === 'warning'
-            ? 'bg-yellow-50 border-yellow-200'
-            : 'bg-green-50 border-green-200'
+            ? 'bg-yellow-500/20 border-yellow-500/30'
+            : 'bg-emerald-500/20 border-emerald-500/30'
         }`}>
           <div className="flex items-start gap-3">
             {feedbackData.status === 'danger' ? (
-              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-red-400 mt-0.5" />
             ) : feedbackData.status === 'warning' ? (
-              <TrendingDown className="w-5 h-5 text-yellow-600 mt-0.5" />
+              <TrendingDown className="w-5 h-5 text-yellow-400 mt-0.5" />
             ) : (
-              <TrendingUp className="w-5 h-5 text-green-600 mt-0.5" />
+              <TrendingUp className="w-5 h-5 text-emerald-400 mt-0.5" />
             )}
             <div className="flex-1">
               <h4 className={`font-semibold mb-2 ${
                 feedbackData.status === 'danger' 
-                  ? 'text-red-900' 
+                  ? 'text-red-100' 
                   : feedbackData.status === 'warning'
-                  ? 'text-yellow-900'
-                  : 'text-green-900'
+                  ? 'text-yellow-100'
+                  : 'text-emerald-100'
               }`}>
                 Expense Added - Budget Updated
               </h4>
               <div className="space-y-1 text-sm">
                 <p className={
                   feedbackData.status === 'danger' 
-                    ? 'text-red-800' 
+                    ? 'text-red-200' 
                     : feedbackData.status === 'warning'
-                    ? 'text-yellow-800'
-                    : 'text-green-800'
+                    ? 'text-yellow-200'
+                    : 'text-emerald-200'
                 }>
                   <span className="font-medium">Daily Budget:</span> ₹{feedbackData.oldDailyBudget.toFixed(2)} → ₹{feedbackData.newDailyBudget.toFixed(2)}
                 </p>
                 <p className={
                   feedbackData.status === 'danger' 
-                    ? 'text-red-800' 
+                    ? 'text-red-200' 
                     : feedbackData.status === 'warning'
-                    ? 'text-yellow-800'
-                    : 'text-green-800'
+                    ? 'text-yellow-200'
+                    : 'text-emerald-200'
                 }>
                   <span className="font-medium">Remaining Today:</span> ₹{feedbackData.remainingToday.toFixed(2)}
                 </p>
                 {feedbackData.status === 'danger' && (
-                  <p className="text-red-800 font-medium mt-2">
+                  <p className="text-red-100 font-medium mt-2">
                     ⚠️ You've exceeded today's budget! Try to reduce spending for the rest of the day.
                   </p>
                 )}
                 {feedbackData.status === 'warning' && (
-                  <p className="text-yellow-800 font-medium mt-2">
+                  <p className="text-yellow-100 font-medium mt-2">
                     Your daily budget has decreased. Consider reducing expenses to stay on track.
                   </p>
                 )}

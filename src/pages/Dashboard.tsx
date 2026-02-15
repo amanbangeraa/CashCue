@@ -7,6 +7,7 @@ import { PortfolioHealthScore } from '../components/ai/PortfolioHealthScore';
 import { InsightCard } from '../components/ai/InsightCard';
 import { TimelineView } from '../components/ai/TimelineView';
 import { ScenarioComparison } from '../components/ai/ScenarioComparison';
+import { UrgentActionsBanner } from '../components/ai/UrgentActionsBanner';
 import { StatsCards } from '../components/dashboard/StatsCards';
 
 interface DashboardProps {
@@ -85,13 +86,13 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   // Loading state
   if (stocksLoading || (aiLoading && !analysis)) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-4">
-            <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center bg-[#111827] rounded-xl px-8 py-10 border border-[#1f2937]">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-500/20 rounded-full mb-4">
+            <Loader2 className="w-8 h-8 text-emerald-200 animate-spin" />
           </div>
-          <p className="text-gray-700 font-medium">Analyzing your portfolio</p>
-          <p className="text-gray-500 text-sm mt-1">This may take a few seconds</p>
+          <p className="text-white font-semibold">Analyzing your portfolio</p>
+          <p className="text-slate-300 text-sm mt-1">This may take a few seconds</p>
         </div>
       </div>
     );
@@ -99,16 +100,16 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl border-2 border-red-200 p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle className="w-8 h-8 text-red-600" />
+      <div className="min-h-[60vh] flex items-center justify-center p-4">
+        <div className="bg-[#111827] rounded-xl border border-red-500/30 p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-200" />
           </div>
-          <h3 className="font-semibold text-xl text-gray-900 mb-2">Analysis Error</h3>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <h3 className="font-semibold text-xl text-white mb-2">Analysis Error</h3>
+          <p className="text-slate-200 mb-6">{error}</p>
           <button 
             onClick={handleRefresh}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
+            className="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-lg font-semibold transition-colors"
           >
             Try Again
           </button>
@@ -120,16 +121,16 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   // No stocks state
   if (stocks.length === 0 || !analysis) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <PieChart className="w-10 h-10 text-gray-400" />
+      <div className="min-h-[60vh] flex items-center justify-center p-4">
+        <div className="bg-[#111827] rounded-xl border border-[#1f2937] p-10 max-w-md w-full text-center">
+          <div className="w-20 h-20 bg-[#1f2937] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#374151]">
+            <PieChart className="w-10 h-10 text-slate-200" />
           </div>
-          <h3 className="font-semibold text-2xl text-gray-900 mb-2">No Portfolio Data</h3>
-          <p className="text-gray-600 mb-6">Add stocks to get AI-powered tax insights</p>
+          <h3 className="font-semibold text-2xl text-white mb-2">No Portfolio Data</h3>
+          <p className="text-slate-300 mb-6">Add stocks to get AI-powered tax insights</p>
           <button 
             onClick={() => onNavigate('portfolio')}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+            className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
           >
             Add Stocks
           </button>
@@ -143,138 +144,188 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const otherInsights = analysis.insights.filter(i => i.priority !== 'high');
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Header */}
-        <div className="flex items-center justify-between mb-8">
+    <div className="space-y-8 pb-12">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2">
+        <div className="space-y-2">
+          <div className="pill w-max">AI TAX DASHBOARD</div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Tax Dashboard</h1>
-            <p className="text-gray-600 mt-1">AI-powered portfolio optimization</p>
+            <h1 className="text-3xl font-bold text-white drop-shadow-sm">Tax Dashboard</h1>
+            <p className="text-slate-300 mt-1">AI-powered portfolio optimization</p>
           </div>
-          
-          <button 
-            onClick={handleRefresh}
-            disabled={aiLoading}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${aiLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
         </div>
+        
+        <button 
+          onClick={handleRefresh}
+          disabled={aiLoading}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#111827] border border-[#1f2937] text-slate-100 hover:bg-[#1f2937] hover:border-emerald-500/30 transition-all font-semibold disabled:opacity-60"
+        >
+          <RefreshCw className={`w-4 h-4 ${aiLoading ? 'animate-spin' : ''}`} />
+          Refresh Analysis
+        </button>
+      </div>
 
-        <div className="space-y-8">
-          {/* Stats Cards */}
+      <div className="space-y-12">
+        {/* Stats Cards */}
+        <section>
           <StatsCards
             portfolioValue={portfolioStats.totalValue}
             totalInvested={portfolioStats.totalInvested}
             totalPL={portfolioStats.totalPL}
             taxSavings={analysis.total_potential_savings}
           />
+        </section>
 
-          {/* Health Score */}
+        {/* Health Score */}
+        <section>
           <PortfolioHealthScore
             score={analysis.health_score}
             strengths={analysis.strengths}
             weaknesses={analysis.weaknesses}
             totalSavings={analysis.total_potential_savings}
           />
+        </section>
 
-          {/* Urgent Actions */}
-          {analysis.urgent_actions.length > 0 && (
-            <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl p-6 shadow-md">
-              <h3 className="font-bold text-xl mb-3 flex items-center gap-2">
-                <AlertTriangle className="w-6 h-6" />
-                Urgent Actions Required
-              </h3>
-              <ul className="space-y-2">
-                {analysis.urgent_actions.map((action, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <span className="font-bold mt-0.5">•</span>
-                    <span>{action}</span>
-                  </li>
-                ))}
-              </ul>
+        {/* Urgent Actions */}
+        {analysis.urgent_actions.length > 0 && (
+          <section>
+            <UrgentActionsBanner 
+              actions={analysis.urgent_actions}
+              onViewDetails={() => {/* Future: open modal with detailed actions */}}
+            />
+          </section>
+        )}
+
+        {/* High Priority Insights */}
+        {highPriorityInsights.length > 0 && (
+          <section className="space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-9 bg-gradient-to-b from-red-500 to-red-600 rounded-full shadow-lg shadow-red-500/20" />
+              <div>
+                <h2 className="text-2xl font-bold text-white">Priority Actions</h2>
+                <p className="text-sm text-slate-400">Immediate attention required</p>
+              </div>
             </div>
-          )}
+            <div className="grid gap-5">
+              {highPriorityInsights.map((insight, idx) => (
+                <InsightCard key={idx} insight={insight} />
+              ))}
+            </div>
+          </section>
+        )}
 
-          {/* High Priority Insights */}
-          {highPriorityInsights.length > 0 && (
-            <section>
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-1 h-8 bg-red-500 rounded-full" />
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Priority Actions</h2>
-                  <p className="text-sm text-gray-600">Immediate attention required</p>
-                </div>
+        {/* Timeline */}
+        {analysis.timeline_events.length > 0 && (
+          <section className="space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-9 bg-gradient-to-b from-blue-400 to-cyan-500 rounded-full shadow-lg shadow-cyan-500/20" />
+              <div>
+                <h2 className="text-2xl font-bold text-white">Critical Dates</h2>
+                <p className="text-sm text-slate-400">Important deadlines and milestones</p>
               </div>
-              <div className="grid gap-6">
-                {highPriorityInsights.map((insight, idx) => (
-                  <InsightCard key={idx} insight={insight} />
-                ))}
-              </div>
-            </section>
-          )}
+            </div>
+            <TimelineView events={analysis.timeline_events} />
+          </section>
+        )}
 
-          {/* Timeline */}
-          {analysis.timeline_events.length > 0 && (
-            <section>
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-1 h-8 bg-indigo-500 rounded-full" />
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Critical Dates</h2>
-                  <p className="text-sm text-gray-600">Important deadlines and milestones</p>
-                </div>
+        {/* Scenarios */}
+        {analysis.scenarios.length > 0 && (
+          <section className="space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-9 bg-gradient-to-b from-emerald-400 to-emerald-600 rounded-full shadow-lg shadow-emerald-500/20" />
+              <div>
+                <h2 className="text-2xl font-bold text-white">Tax Strategies</h2>
+                <p className="text-sm text-slate-400">Compare scenarios and choose the best approach</p>
               </div>
-              <TimelineView events={analysis.timeline_events} />
-            </section>
-          )}
+            </div>
+            <ScenarioComparison 
+              scenarios={analysis.scenarios}
+              recommendedIndex={analysis.recommended_scenario}
+            />
+          </section>
+        )}
 
-          {/* Scenarios */}
-          {analysis.scenarios.length > 0 && (
-            <section>
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-1 h-8 bg-indigo-500 rounded-full" />
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Tax Scenarios</h2>
-                  <p className="text-sm text-gray-600">Compare different strategies</p>
-                </div>
+        {/* Other Insights */}
+        {otherInsights.length > 0 && (
+          <section className="space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-9 bg-gradient-to-b from-slate-400 to-slate-600 rounded-full shadow-lg shadow-slate-500/10" />
+              <div>
+                <h2 className="text-2xl font-bold text-white">Additional Opportunities</h2>
+                <p className="text-sm text-slate-400">{otherInsights.length} more way{otherInsights.length > 1 ? 's' : ''} to optimize your taxes</p>
               </div>
-              <ScenarioComparison 
-                scenarios={analysis.scenarios}
-                recommendedIndex={analysis.recommended_scenario}
-              />
-            </section>
-          )}
+            </div>
+            <div className="grid md:grid-cols-2 gap-5">
+              {otherInsights.map((insight, idx) => (
+                <InsightCard key={idx} insight={insight} />
+              ))}
+            </div>
+          </section>
+        )}
 
-          {/* Other Insights */}
-          {otherInsights.length > 0 && (
-            <section>
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-1 h-8 bg-gray-400 rounded-full" />
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Additional Opportunities</h2>
-                  <p className="text-sm text-gray-600">More ways to optimize your taxes</p>
-                </div>
+        {/* Important Disclaimers */}
+        <section className="bg-[#111827] border border-amber-500/30 rounded-xl p-6">
+          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-400" />
+            Important Disclaimers
+          </h3>
+          <div className="space-y-4 text-sm">
+            <div className="flex items-start gap-3">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2 shrink-0" />
+              <div>
+                <strong className="text-white">Not Investment Advice:</strong>
+                <span className="text-slate-300"> This tool provides tax optimization insights based on mathematical analysis. 
+                It is not personalized investment advice. Consult a SEBI-registered investment advisor for investment decisions.</span>
               </div>
-              <div className="grid md:grid-cols-2 gap-6">
-                {otherInsights.map((insight, idx) => (
-                  <InsightCard key={idx} insight={insight} />
-                ))}
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2 shrink-0" />
+              <div>
+                <strong className="text-white">Tax Law Changes:</strong>
+                <span className="text-slate-300"> Tax calculations are based on current Indian tax laws as of FY 2024-25. 
+                Rates and rules may change. Consult a Chartered Accountant for personalized tax advice.</span>
               </div>
-            </section>
-          )}
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2 shrink-0" />
+              <div>
+                <strong className="text-white">Market Risks:</strong>
+                <span className="text-slate-300"> Tax-loss harvesting involves selling securities. Market movements may result in 
+                opportunity costs if stock prices change after sale. Consider your overall investment strategy.</span>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2 shrink-0" />
+              <div>
+                <strong className="text-white">Transaction Costs:</strong>
+                <span className="text-slate-300"> All calculations include estimated transaction costs (STT, brokerage, GST). 
+                Actual costs may vary by broker.</span>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-2 shrink-0" />
+              <div>
+                <strong className="text-white">No Guarantees:</strong>
+                <span className="text-slate-300"> Potential savings are estimates based on current portfolio data and tax rules. 
+                Actual outcomes may differ. Always verify calculations with a tax professional.</span>
+              </div>
+            </div>
+          </div>
+        </section>
 
-          {/* Footer */}
-          <div className="text-center pt-8 border-t border-gray-200">
-            <p className="text-sm text-gray-500">
-              Powered by Groq (Llama 3.3) • Last updated{' '}
-              {new Date(analysis.generated_at).toLocaleString('en-IN', {
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit'
-              })}
-            </p>
+        {/* Footer */}
+        <div className="text-center pt-8 border-t border-[#1f2937] text-slate-400 text-sm">
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-emerald-400">✦</span>
+            Powered by Groq (Llama 3.3)
+            <span className="text-slate-600">•</span>
+            Last updated{' '}
+            {new Date(analysis.generated_at).toLocaleString('en-IN', {
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit'
+            })}
           </div>
         </div>
       </div>

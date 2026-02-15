@@ -1,16 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  font-family: 'Outfit', 'Inter', 'Segoe UI', system-ui, sans-serif;
+  line-height: 1.6;
   font-weight: 400;
-
-  color-scheme: light;
-  color: rgba(0, 0, 0, 0.87);
-  background-color: #f9fafb;
-
+  color-scheme: dark;
+  color: #e8f1ff;
+  background: radial-gradient(circle at 20% 20%, rgba(18, 197, 134, 0.15), transparent 30%),
+              radial-gradient(circle at 80% 0%, rgba(92, 255, 188, 0.12), transparent 28%),
+              #070f1f;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -26,24 +28,95 @@
 body {
   margin: 0;
   min-height: 100vh;
+  background: #0a0f1a;
+  color: #e8f1ff;
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #0b1424;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
+  background: linear-gradient(180deg, #22e19c, #0ea672);
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: linear-gradient(180deg, #5affbd, #12c586);
+}
+
+.glass-surface {
+  background: #111827;
+  border: 1px solid #1f2937;
+  box-shadow: none;
+}
+
+.card-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  background: rgba(34, 225, 156, 0.1);
+  color: #aef7d8;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.panel-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #c9d6f3;
+  text-transform: uppercase;
+}
+
+.muted {
+  color: #9fb5cb;
+}
+
+/* Dark theme overrides for legacy Tailwind tokens */
+body .bg-white {
+  background-color: rgba(17, 25, 40, 0.88) !important;
+  color: #e8f1ff;
+}
+
+body .bg-gray-50 {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+body .bg-gray-100,
+body .bg-gray-200 {
+  background-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+body .text-gray-900 {
+  color: #f4f7ff !important;
+}
+
+body .text-gray-700,
+body .text-gray-600 {
+  color: #d1ddf4 !important;
+}
+
+body .text-gray-500,
+body .text-gray-400 {
+  color: #9fb5cb !important;
+}
+
+body .border-gray-200,
+body .border-gray-300 {
+  border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
 /* Line clamp utilities for text truncation */

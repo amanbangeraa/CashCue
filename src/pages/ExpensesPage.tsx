@@ -69,10 +69,11 @@ export function ExpensesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Expenses</h1>
-          <p className="text-gray-600">
+      <div className="flex justify-between items-center gap-4 flex-wrap">
+        <div className="space-y-2">
+          <div className="pill w-max">Expenses</div>
+          <h1 className="text-3xl font-bold text-white">Expense Control</h1>
+          <p className="text-slate-300">
             Track your daily expenses automatically via SMS or manually
           </p>
         </div>
@@ -86,8 +87,8 @@ export function ExpensesPage() {
       {simulatorFeedback && (
         <div className={`rounded-lg p-4 ${
           simulatorFeedback.startsWith('✓') 
-            ? 'bg-green-50 border border-green-200 text-green-800' 
-            : 'bg-red-50 border border-red-200 text-red-800'
+            ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-100' 
+            : 'bg-red-500/20 border border-red-500/30 text-red-100'
         }`}>
           <p className="text-sm font-medium">{simulatorFeedback}</p>
         </div>
@@ -102,12 +103,12 @@ export function ExpensesPage() {
         />
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <ExpenseList />
-        </div>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div className="space-y-6">
           <AddExpenseForm />
+          <ExpenseList />
+        </div>
+        <div>
           <MonthlyChart />
         </div>
       </div>

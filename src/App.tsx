@@ -99,7 +99,7 @@ function App() {
           <BudgetProvider>
             <Layout>
               <Navbar currentPage={currentPage} onNavigate={setCurrentPage} />
-              <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <main className="w-full py-6 sm:py-8 space-y-8">
                 {renderPage()}
               </main>
             </Layout>

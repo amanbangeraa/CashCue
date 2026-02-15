@@ -7,11 +7,11 @@ interface CardProps {
 }
 
 export function Card({ children, className = '', variant = 'default' }: CardProps) {
-  const baseStyles = 'rounded-xl p-6 transition-shadow duration-200';
-  
+  const baseStyles = 'rounded-xl p-6 transition-all duration-200 text-slate-100';
+
   const variantStyles = {
-    default: 'bg-white border border-gray-200 shadow-sm hover:shadow-md',
-    gradient: 'bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-sm hover:shadow-md'
+    default: 'bg-[#111827] border border-[#1f2937]',
+    gradient: 'bg-[#111827] border border-emerald-500/30'
   };
   
   return (
@@ -33,15 +33,15 @@ interface MetricCardProps {
 
 export function MetricCard({ label, value, change, icon }: MetricCardProps) {
   return (
-    <Card>
+    <Card className="hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 cursor-default">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600 mb-1">{label}</p>
-          <p className="text-3xl font-bold text-gray-900">{value}</p>
+          <p className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">{label}</p>
+          <p className="text-3xl font-bold text-white drop-shadow-sm mb-1">{value}</p>
           
           {change && (
-            <div className={`flex items-center gap-1 mt-2 text-sm font-medium ${
-              change.positive ? 'text-green-600' : 'text-red-600'
+            <div className={`flex items-center gap-1.5 mt-3 text-sm font-semibold ${
+              change.positive ? 'text-emerald-400' : 'text-red-400'
             }`}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {change.positive ? (
@@ -56,7 +56,7 @@ export function MetricCard({ label, value, change, icon }: MetricCardProps) {
         </div>
         
         {icon && (
-          <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+          <div className="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500/20 group-hover:scale-110 transition-all">
             {icon}
           </div>
         )}
