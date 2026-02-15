@@ -13,15 +13,8 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Log config for debugging (remove in production)
-console.log('Firebase Config:', {
-  ...firebaseConfig,
-  apiKey: firebaseConfig.apiKey ? '***' + firebaseConfig.apiKey.slice(-4) : 'MISSING'
-});
-
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-console.log('Firebase initialized successfully');
 
 // Initialize services
 export const auth = getAuth(app);

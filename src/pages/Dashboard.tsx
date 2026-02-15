@@ -1,19 +1,232 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { TrendingUp, Wallet, TrendingDown, DollarSign, ArrowRight } from 'lucide-react';
 import { usePortfolio } from '../context/PortfolioContext';
 import { StatCard } from '../components/shared/StatCard';
 import { calculatePortfolioSummary, generateHarvestPlan } from '../utils/taxCalculations';
 import { formatLargeNumber, formatWithSign } from '../utils/formatters';
+import { generateTaxInsights, generateDemoPortfolio } from '../services/aiAnalyzer';
+import type { AIAnalysisResult } from '../services/aiAnalyzer';
+import { PortfolioHealthScore } from '../components/ai/PortfolioHealthScore';
+import { InsightCard } from '../components/ai/InsightCard';
+import { TimelineView } from '../components/ai/TimelineView';
+import { ScenarioComparison } from '../components/ai/ScenarioComparison';
+import { LoadingSpinner } from '../components/ai/LoadingSpinner';
 
 interface DashboardProps {
   onNavigate: (page: 'portfolio' | 'tax-analysis') => void;
 }
 
 export function Dashboard({ onNavigate }: DashboardProps) {
-  const { stocks } = usePortfolio();
+  const { stocks, loading: stocksLoading } = usePortfolio();
+  const [analysis, setAnalysis] = useState<AIAnalysisResult | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const summary = useMemo(() => calculatePortfolioSummary(stocks), [stocks]);
   const harvestPlan = useMemo(() => generateHarvestPlan(stocks), [stocks]);
+
+  // Calculate realized gains (you can enhance this with actual data from your context)
+  const realizedGains = 0;
+
+  // Trigger AI analysis when stocks are loaded
+  useEffect(() => {
+    async function analyzePortfolio() {
+      if (stocksLoading) {
+        setAiLoading(false);
+        return;
+      }
+
+      try {
+        setAiLoading(true);
+        setError(null);
+        
+        // If portfolio is too small, use demo data for testing/hackathon
+        const totalValue = stocks.reduce((sum, s) => sum + (s.currentPrice * s.quantity), 0);
+        const portfolioToAnalyze = stocks.length < 5 || totalValue < 100000 
+          ? generateDemoPortfolio() 
+          : stocks;
+        
+        if (portfolioToAnalyze !== stocks) {
+          console.log('📊 Using demo portfolio for AI analysis (your portfolio is small)');
+        }
+        
+        const result = await generateTaxInsights(portfolioToAnalyze, realizedGains);
+        setAnalysis(result);
+      } catch (err) {
+        console.error('AI Analysis failed:', err);
+        setError('Unable to generate AI insights. Showing basic portfolio view.');
+      } finally {
+        setAiLoading(false);
+      }
+    }
+
+    analyzePortfolio();
+  }, [stocks, stocksLoading, realizedGains]);
+
+  // Loading state
+  if (stocksLoading || (aiLoading && !analysis)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner message="🤖 AI is analyzing your portfolio..." />
+      </div>
+    );
+  }
+
+  // No stocks state
+  if (stocks.length === 0) {
+    return (
+      <div className="space-y-8">
+        {/* Hero Section */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-xl p-12 text-white">
+          <div className="max-w-3xl">
+            <h1 className="text-5xl font-bold mb-4">
+              Welcome to CashCue! 📊
+            </h1>
+            <p className="text-xl text-blue-100 mb-6">
+              Add stocks to your portfolio to get AI-powered tax optimization insights
+            </p>
+            <button
+              onClick={() => onNavigate('portfolio')}
+              className="inline-flex items-center px-6 py-3 bg-white text-blue-700 font-semibold rounded-lg hover:bg-blue-50 transition-colors shadow-lg"
+            >
+              Add Your First Stock
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // AI-Powered Dashboard with analysis
+  if (analysis && !error) {
+    const highPriorityInsights = analysis.insights.filter(i => i.priority === 'high');
+    const mediumPriorityInsights = analysis.insights.filter(i => i.priority === 'medium');
+    const lowPriorityInsights = analysis.insights.filter(i => i.priority === 'low');
+
+    return (
+      <div className="space-y-8">
+        {/* Portfolio Health Score - Hero Section */}
+        <PortfolioHealthScore
+          score={analysis.health_score}
+          strengths={analysis.strengths}
+          weaknesses={analysis.weaknesses}
+          totalSavings={analysis.total_potential_savings}
+        />
+
+        {/* Urgent Actions Alert */}
+        {analysis.urgent_actions.length > 0 && (
+          <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl p-6 shadow-lg">
+            <h3 className="font-bold text-xl mb-3 flex items-center gap-2">
+              <span className="text-2xl">🚨</span>
+              Urgent Actions Required
+            </h3>
+            <ul className="space-y-2">
+              {analysis.urgent_actions.map((action, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="font-bold mt-0.5">•</span>
+                  <span>{action}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            title="Portfolio Value"
+            value={formatLargeNumber(summary.totalCurrent)}
+            icon={Wallet}
+            color="blue"
+          />
+          <StatCard
+            title="Total Invested"
+            value={formatLargeNumber(summary.totalInvested)}
+            icon={DollarSign}
+            color="green"
+          />
+          <StatCard
+            title="Total P&L"
+            value={formatWithSign(summary.totalGainLoss)}
+            icon={summary.totalGainLoss >= 0 ? TrendingUp : TrendingDown}
+            color={summary.totalGainLoss >= 0 ? 'green' : 'red'}
+          />
+          <StatCard
+            title="Tax Savings"
+            value={formatLargeNumber(harvestPlan.totalTaxSavings)}
+            icon={TrendingUp}
+            color="green"
+          />
+        </div>
+
+        {/* High Priority Insights */}
+        {highPriorityInsights.length > 0 && (
+          <section>
+            <h2 className="text-3xl font-bold mb-4 flex items-center gap-2">
+              🔥 High Priority Actions
+            </h2>
+            <div className="grid gap-6">
+              {highPriorityInsights.map((insight, idx) => (
+                <InsightCard key={idx} insight={insight} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Timeline */}
+        {analysis.timeline_events.length > 0 && (
+          <section>
+            <h2 className="text-3xl font-bold mb-6">📅 Critical Dates</h2>
+            <TimelineView events={analysis.timeline_events} />
+          </section>
+        )}
+
+        {/* Scenarios */}
+        {analysis.scenarios.length > 0 && (
+          <section>
+            <h2 className="text-3xl font-bold mb-6">💡 Tax Optimization Scenarios</h2>
+            <ScenarioComparison 
+              scenarios={analysis.scenarios}
+              recommendedIndex={analysis.recommended_scenario}
+            />
+          </section>
+        )}
+
+        {/* Medium Priority Insights */}
+        {mediumPriorityInsights.length > 0 && (
+          <section>
+            <h2 className="text-3xl font-bold mb-4">⚡ Medium Priority Opportunities</h2>
+            <div className="grid gap-6">
+              {mediumPriorityInsights.map((insight, idx) => (
+                <InsightCard key={idx} insight={insight} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Low Priority Insights */}
+        {lowPriorityInsights.length > 0 && (
+          <section>
+            <h2 className="text-3xl font-bold mb-4">💡 Additional Optimizations</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              {lowPriorityInsights.map((insight, idx) => (
+                <InsightCard key={idx} insight={insight} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Metadata Footer */}
+        <div className="text-center text-sm text-gray-500 pt-8 border-t">
+          Analysis generated by Groq (Llama 3.3) on{' '}
+          {new Date(analysis.generated_at).toLocaleString('en-IN')}
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback to basic dashboard if AI fails
 
   return (
     <div className="space-y-8">
