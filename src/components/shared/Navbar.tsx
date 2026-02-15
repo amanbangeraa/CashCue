@@ -1,4 +1,6 @@
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, Calculator, DollarSign } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, Calculator, DollarSign, LogOut } from 'lucide-react';
+import { auth } from '../../lib/firebase';
+import { signOut } from 'firebase/auth';
 
 interface NavbarProps {
   currentPage: 'dashboard' | 'portfolio' | 'tax-analysis' | 'expenses' | 'budget' | 'income';
@@ -15,6 +17,15 @@ export function Navbar({ currentPage, onNavigate }: NavbarProps) {
     { id: 'tax-analysis' as const, label: 'Tax Analysis', icon: TrendingDown },
   ];
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      console.log('User logged out');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -30,7 +41,7 @@ export function Navbar({ currentPage, onNavigate }: NavbarProps) {
           </div>
 
           {/* Navigation Links */}
-          <div className="flex space-x-1">
+          <div className="flex items-center space-x-1">
             {navItems.map(item => {
               const Icon = item.icon;
               const isActive = currentPage === item.id;
@@ -52,9 +63,20 @@ export function Navbar({ currentPage, onNavigate }: NavbarProps) {
                 </button>
               );
             })}
+            
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center px-4 py-2 ml-4 rounded-md text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+              title="Logout"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </button>
           </div>
         </div>
       </div>
     </nav>
   );
 }
+

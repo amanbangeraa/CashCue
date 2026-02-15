@@ -1,7 +1,10 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Expense } from '../types/expense.types';
-import { supabase } from '../lib/supabase';
+import { db, auth } from '../lib/firebase';
+import { collection, addDoc, deleteDoc, doc, query, where, onSnapshot, getDocs } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 
 interface ExpenseContextType {
   expenses: Expense[];
@@ -20,122 +23,95 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load expenses from Supabase on mount
+  // Load expenses from Firebase on auth state change
   useEffect(() => {
-    fetchExpenses();
-  }, []);
+    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
+      if (user) {
+        const q = query(
+          collection(db, 'expenses'),
+          where('userId', '==', user.uid)
+        );
+        
+        const unsubscribeSnapshot = onSnapshot(q, (snapshot: any) => {
+          const expensesData = snapshot.docs.map((doc: any) => ({
+            id: doc.id,
+            ...doc.data()
+          })) as Expense[];
+          setExpenses(expensesData);
+          setLoading(false);
+        }, (err: any) => {
+          console.error('Error fetching expenses:', err);
+          setError(err.message);
+          setExpenses([]);
+          setLoading(false);
+        });
 
-  const fetchExpenses = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        // If no user is logged in, show empty state
+        return unsubscribeSnapshot;
+      } else {
         setExpenses([]);
         setLoading(false);
-        return;
       }
+    });
 
-      const { data, error: fetchError } = await supabase
-        .from('expenses')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false });
-
-      if (fetchError) throw fetchError;
-
-      setExpenses(data || []);
-    } catch (err) {
-      console.error('Error fetching expenses:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load expenses');
-      // Use empty array on error
-      setExpenses([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => unsubscribe();
+  }, []);
 
   const addExpense = async (expense: Expense) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       
       if (!user) {
-        // If not logged in, just update local state
         setExpenses(prev => [expense, ...prev]);
         return;
       }
 
-      const { data, error: insertError } = await supabase
-        .from('expenses')
-        .insert([{
-          id: expense.id,
-          user_id: user.id,
-          date: expense.date,
-          category: expense.category,
-          amount: expense.amount,
-          description: expense.description,
-        }] as any)
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-
-      setExpenses(prev => [data as Expense, ...prev]);
+      await addDoc(collection(db, 'expenses'), {
+        ...expense,
+        userId: user.uid,
+        createdAt: new Date()
+      });
     } catch (err) {
       console.error('Error adding expense:', err);
       setError(err instanceof Error ? err.message : 'Failed to add expense');
-      // Still update local state as fallback
       setExpenses(prev => [expense, ...prev]);
     }
   };
 
   const removeExpense = async (id: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       
       if (!user) {
-        // If not logged in, just update local state
         setExpenses(prev => prev.filter(e => e.id !== id));
         return;
       }
 
-      const { error: deleteError } = await supabase
-        .from('expenses')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (deleteError) throw deleteError;
-
-      setExpenses(prev => prev.filter(e => e.id !== id));
+      await deleteDoc(doc(db, 'expenses', id));
     } catch (err) {
       console.error('Error removing expense:', err);
       setError(err instanceof Error ? err.message : 'Failed to remove expense');
-      // Still update local state as fallback
       setExpenses(prev => prev.filter(e => e.id !== id));
     }
   };
 
   const loadDemoData = async () => {
-    // Import demo data only when explicitly requested
     const { demoExpenses } = await import('../data/demoExpenses');
     setExpenses(demoExpenses);
   };
 
   const clearExpenses = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       
       if (user) {
-        const { error: deleteError } = await supabase
-          .from('expenses')
-          .delete()
-          .eq('user_id', user.id);
-
-        if (deleteError) throw deleteError;
+        const q = query(
+          collection(db, 'expenses'),
+          where('userId', '==', user.uid)
+        );
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach(async (docSnapshot: any) => {
+          await deleteDoc(doc(db, 'expenses', docSnapshot.id));
+        });
       }
 
       setExpenses([]);
