@@ -1,7 +1,10 @@
 import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import type { IncomeSource, TaxDeduction, IncomeSummary } from '../types/income.types';
-import { supabase } from '../lib/supabase';
+import { db, auth } from '../lib/firebase';
+import { collection, addDoc, deleteDoc, doc, updateDoc, query, where, onSnapshot } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 
 interface IncomeContextType {
   incomeSources: IncomeSource[];
@@ -26,81 +29,70 @@ export function IncomeProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchIncomeSources();
-    fetchTaxDeductions();
-  }, []);
+    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
+      if (user) {
+        const incomeQuery = query(
+          collection(db, 'income_sources'),
+          where('userId', '==', user.uid)
+        );
+        
+        const unsubscribeIncome = onSnapshot(incomeQuery, (snapshot: any) => {
+          const data = snapshot.docs.map((doc: any) => ({
+            id: doc.id,
+            ...doc.data()
+          })) as IncomeSource[];
+          setIncomeSources(data);
+          setLoading(false);
+        }, (err: any) => {
+          console.error('Error fetching income sources:', err);
+          setError(err.message);
+          setIncomeSources([]);
+          setLoading(false);
+        });
 
-  const fetchIncomeSources = async () => {
-    try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
+        const deductionsQuery = query(
+          collection(db, 'tax_deductions'),
+          where('userId', '==', user.uid)
+        );
+        
+        const unsubscribeDeductions = onSnapshot(deductionsQuery, (snapshot: any) => {
+          const data = snapshot.docs.map((doc: any) => ({
+            id: doc.id,
+            ...doc.data()
+          })) as TaxDeduction[];
+          setTaxDeductions(data);
+        }, (err: any) => {
+          console.error('Error fetching tax deductions:', err);
+          setTaxDeductions([]);
+        });
+
+        return () => {
+          unsubscribeIncome();
+          unsubscribeDeductions();
+        };
+      } else {
         setIncomeSources([]);
-        setLoading(false);
-        return;
-      }
-
-      const { data, error: fetchError } = await supabase
-        .from('income_sources')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (fetchError) throw fetchError;
-      setIncomeSources(data || []);
-    } catch (err) {
-      console.error('Error fetching income sources:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load income sources');
-      setIncomeSources([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchTaxDeductions = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
         setTaxDeductions([]);
-        return;
+        setLoading(false);
       }
+    });
 
-      const { data, error: fetchError } = await supabase
-        .from('tax_deductions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (fetchError) throw fetchError;
-      setTaxDeductions(data || []);
-    } catch (err) {
-      console.error('Error fetching tax deductions:', err);
-      setTaxDeductions([]);
-    }
-  };
-
+    return () => unsubscribe();
+  }, []);
   const addIncomeSource = async (source: IncomeSource) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       
       if (!user) {
         setIncomeSources(prev => [...prev, source]);
         return;
       }
 
-      const { data, error: insertError } = await supabase
-        .from('income_sources')
-        .insert([{
-          user_id: user.id,
-          ...source,
-        }])
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-      setIncomeSources(prev => [data, ...prev]);
+      await addDoc(collection(db, 'income_sources'), {
+        ...source,
+        userId: user.uid,
+        createdAt: new Date()
+      });
     } catch (err) {
       console.error('Error adding income source:', err);
       setError(err instanceof Error ? err.message : 'Failed to add income source');
@@ -110,7 +102,7 @@ export function IncomeProvider({ children }: { children: ReactNode }) {
 
   const updateIncomeSource = async (id: string, updates: Partial<IncomeSource>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       
       if (!user) {
         setIncomeSources(prev =>
@@ -119,16 +111,7 @@ export function IncomeProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const { error: updateError } = await supabase
-        .from('income_sources')
-        .update(updates)
-        .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (updateError) throw updateError;
-      setIncomeSources(prev =>
-        prev.map(s => (s.id === id ? { ...s, ...updates } : s))
-      );
+      await updateDoc(doc(db, 'income_sources', id), updates);
     } catch (err) {
       console.error('Error updating income source:', err);
       setError(err instanceof Error ? err.message : 'Failed to update income source');
@@ -138,21 +121,14 @@ export function IncomeProvider({ children }: { children: ReactNode }) {
 
   const removeIncomeSource = async (id: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       
       if (!user) {
         setIncomeSources(prev => prev.filter(s => s.id !== id));
         return;
       }
 
-      const { error: deleteError } = await supabase
-        .from('income_sources')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (deleteError) throw deleteError;
-      setIncomeSources(prev => prev.filter(s => s.id !== id));
+      await deleteDoc(doc(db, 'income_sources', id));
     } catch (err) {
       console.error('Error removing income source:', err);
       setError(err instanceof Error ? err.message : 'Failed to remove income source');
@@ -162,24 +138,18 @@ export function IncomeProvider({ children }: { children: ReactNode }) {
 
   const addTaxDeduction = async (deduction: TaxDeduction) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       
       if (!user) {
         setTaxDeductions(prev => [...prev, deduction]);
         return;
       }
 
-      const { data, error: insertError } = await supabase
-        .from('tax_deductions')
-        .insert([{
-          user_id: user.id,
-          ...deduction,
-        }])
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-      setTaxDeductions(prev => [data, ...prev]);
+      await addDoc(collection(db, 'tax_deductions'), {
+        ...deduction,
+        userId: user.uid,
+        createdAt: new Date()
+      });
     } catch (err) {
       console.error('Error adding tax deduction:', err);
       setError(err instanceof Error ? err.message : 'Failed to add tax deduction');
@@ -189,7 +159,7 @@ export function IncomeProvider({ children }: { children: ReactNode }) {
 
   const updateTaxDeduction = async (id: string, updates: Partial<TaxDeduction>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       
       if (!user) {
         setTaxDeductions(prev =>
@@ -198,16 +168,7 @@ export function IncomeProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const { error: updateError } = await supabase
-        .from('tax_deductions')
-        .update(updates)
-        .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (updateError) throw updateError;
-      setTaxDeductions(prev =>
-        prev.map(d => (d.id === id ? { ...d, ...updates } : d))
-      );
+      await updateDoc(doc(db, 'tax_deductions', id), updates);
     } catch (err) {
       console.error('Error updating tax deduction:', err);
       setError(err instanceof Error ? err.message : 'Failed to update tax deduction');
@@ -217,21 +178,14 @@ export function IncomeProvider({ children }: { children: ReactNode }) {
 
   const removeTaxDeduction = async (id: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       
       if (!user) {
         setTaxDeductions(prev => prev.filter(d => d.id !== id));
         return;
       }
 
-      const { error: deleteError } = await supabase
-        .from('tax_deductions')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (deleteError) throw deleteError;
-      setTaxDeductions(prev => prev.filter(d => d.id !== id));
+      await deleteDoc(doc(db, 'tax_deductions', id));
     } catch (err) {
       console.error('Error removing tax deduction:', err);
       setError(err instanceof Error ? err.message : 'Failed to remove tax deduction');

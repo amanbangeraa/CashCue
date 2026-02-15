@@ -1,7 +1,10 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { Stock } from '../types/portfolio.types';
-import { supabase } from '../lib/supabase';
+import { db, auth } from '../lib/firebase';
+import { collection, addDoc, deleteDoc, doc, updateDoc, query, where, onSnapshot, getDocs } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 
 interface PortfolioContextType {
   stocks: Stock[];
@@ -21,155 +24,92 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load stocks from Supabase on mount
+  // Load stocks from Firebase on auth state change
   useEffect(() => {
-    fetchStocks();
-  }, []);
+    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
+      if (user) {
+        const q = query(
+          collection(db, 'stocks'),
+          where('userId', '==', user.uid)
+        );
+        
+        const unsubscribeSnapshot = onSnapshot(q, (snapshot: any) => {
+          const stocksData = snapshot.docs.map((doc: any) => ({
+            id: doc.id,
+            ...doc.data()
+          })) as Stock[];
+          setStocks(stocksData);
+          setLoading(false);
+        }, (err: any) => {
+          console.error('Error fetching stocks:', err);
+          setError(err.message);
+          setStocks([]);
+          setLoading(false);
+        });
 
-  const fetchStocks = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        // If no user is logged in, show empty state
+        return unsubscribeSnapshot;
+      } else {
         setStocks([]);
         setLoading(false);
-        return;
       }
+    });
 
-      const { data, error: fetchError } = await supabase
-        .from('stocks')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (fetchError) throw fetchError;
-
-      setStocks(data || []);
-    } catch (err) {
-      console.error('Error fetching stocks:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load portfolio');
-      // Use empty array on error
-      setStocks([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => unsubscribe();
+  }, []);
 
   const addStock = async (stock: Stock) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       
       if (!user) {
-        // If not logged in, just update local state
         setStocks(prev => [...prev, stock]);
         return;
       }
 
-      const { data, error: insertError } = await supabase
-        .from('stocks')
-        .insert([{
-          id: stock.id,
-          user_id: user.id,
-          stock_name: stock.stockName,
-          ticker_symbol: stock.tickerSymbol,
-          quantity: stock.quantity,
-          buy_price: stock.buyPrice,
-          current_price: stock.currentPrice,
-          buy_date: stock.buyDate,
-        }] as any)
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-
-      // Transform database response to Stock type
-      const dbData = data as any;
-      const newStock: Stock = {
-        id: dbData.id,
-        stockName: dbData.stock_name,
-        tickerSymbol: dbData.ticker_symbol,
-        quantity: dbData.quantity,
-        buyPrice: dbData.buy_price,
-        currentPrice: dbData.current_price,
-        buyDate: dbData.buy_date,
-      };
-
-      setStocks(prev => [...prev, newStock]);
+      await addDoc(collection(db, 'stocks'), {
+        ...stock,
+        userId: user.uid,
+        createdAt: new Date()
+      });
     } catch (err) {
       console.error('Error adding stock:', err);
       setError(err instanceof Error ? err.message : 'Failed to add stock');
-      // Still update local state as fallback
       setStocks(prev => [...prev, stock]);
     }
   };
 
   const removeStock = async (id: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       
       if (!user) {
-        // If not logged in, just update local state
         setStocks(prev => prev.filter(s => s.id !== id));
         return;
       }
 
-      const { error: deleteError } = await supabase
-        .from('stocks')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (deleteError) throw deleteError;
-
-      setStocks(prev => prev.filter(s => s.id !== id));
+      await deleteDoc(doc(db, 'stocks', id));
     } catch (err) {
       console.error('Error removing stock:', err);
       setError(err instanceof Error ? err.message : 'Failed to remove stock');
-      // Still update local state as fallback
       setStocks(prev => prev.filter(s => s.id !== id));
     }
   };
 
   const updateStock = async (id: string, updates: Partial<Stock>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       
       if (!user) {
-        // If not logged in, just update local state
         setStocks(prev =>
           prev.map(s => (s.id === id ? { ...s, ...updates } : s))
         );
         return;
       }
 
-      // Transform camelCase to snake_case for database
-      const dbUpdates: any = {};
-      if (updates.stockName !== undefined) dbUpdates.stock_name = updates.stockName;
-      if (updates.tickerSymbol !== undefined) dbUpdates.ticker_symbol = updates.tickerSymbol;
-      if (updates.quantity !== undefined) dbUpdates.quantity = updates.quantity;
-      if (updates.buyPrice !== undefined) dbUpdates.buy_price = updates.buyPrice;
-      if (updates.currentPrice !== undefined) dbUpdates.current_price = updates.currentPrice;
-      if (updates.buyDate !== undefined) dbUpdates.buy_date = updates.buyDate;
-
-      const { error: updateError } = await supabase
-        .from('stocks')
-        .update(dbUpdates as any)
-        .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (updateError) throw updateError;
-
-      setStocks(prev =>
-        prev.map(s => (s.id === id ? { ...s, ...updates } : s))
-      );
+      await updateDoc(doc(db, 'stocks', id), updates);
     } catch (err) {
       console.error('Error updating stock:', err);
       setError(err instanceof Error ? err.message : 'Failed to update stock');
-      // Still update local state as fallback
       setStocks(prev =>
         prev.map(s => (s.id === id ? { ...s, ...updates } : s))
       );
@@ -177,22 +117,23 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   };
 
   const loadDemoData = async () => {
-    // Import demo data only when explicitly requested
     const { demoStocks } = await import('../data/demoPortfolio');
     setStocks(demoStocks);
   };
 
   const clearPortfolio = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       
       if (user) {
-        const { error: deleteError } = await supabase
-          .from('stocks')
-          .delete()
-          .eq('user_id', user.id);
-
-        if (deleteError) throw deleteError;
+        const q = query(
+          collection(db, 'stocks'),
+          where('userId', '==', user.uid)
+        );
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach(async (docSnapshot: any) => {
+          await deleteDoc(doc(db, 'stocks', docSnapshot.id));
+        });
       }
 
       setStocks([]);

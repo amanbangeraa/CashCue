@@ -1,7 +1,10 @@
 import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import type { BudgetConfig, BudgetStatus } from '../types/budget.types';
-import { supabase } from '../lib/supabase';
+import { db, auth } from '../lib/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 import { useExpenses } from './ExpenseContext';
 import { startOfMonth, endOfMonth, getDaysInMonth, getDate, parseISO } from 'date-fns';
 
@@ -24,42 +27,34 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
 
   useEffect(() => {
-    fetchBudgetConfig();
-  }, []);
-
-  const fetchBudgetConfig = async () => {
-    try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
+    const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
+      if (user) {
+        try {
+          const docRef = doc(db, 'budget_configs', `${user.uid}_${currentMonth}`);
+          const docSnap = await getDoc(docRef);
+          
+          if (docSnap.exists()) {
+            setBudgetConfigState(docSnap.data() as BudgetConfig);
+          } else {
+            setBudgetConfigState(null);
+          }
+        } catch (err) {
+          console.error('Error fetching budget config:', err);
+          setError(err instanceof Error ? err.message : 'Failed to load budget');
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setBudgetConfigState(null);
         setLoading(false);
-        return;
       }
+    });
 
-      const { data, error: fetchError } = await supabase
-        .from('budget_configs')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('month', currentMonth)
-        .single();
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        throw fetchError;
-      }
-
-      setBudgetConfigState(data);
-    } catch (err) {
-      console.error('Error fetching budget config:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load budget');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+    return () => unsubscribe();
+  }, [currentMonth]);
   const setBudgetConfig = async (salary: number, savingsGoal: number) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       
       const config: BudgetConfig = {
         id: crypto.randomUUID(),
@@ -73,22 +68,10 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const { data, error: upsertError } = await supabase
-        .from('budget_configs')
-        .upsert({
-          user_id: user.id,
-          monthly_salary: salary,
-          monthly_savings_goal: savingsGoal,
-          month: currentMonth,
-        }, {
-          onConflict: 'user_id,month'
-        })
-        .select()
-        .single();
+      const docRef = doc(db, 'budget_configs', `${user.uid}_${currentMonth}`);
+      await setDoc(docRef, config);
 
-      if (upsertError) throw upsertError;
-
-      setBudgetConfigState(data);
+      setBudgetConfigState(config);
     } catch (err) {
       console.error('Error saving budget config:', err);
       setError(err instanceof Error ? err.message : 'Failed to save budget');

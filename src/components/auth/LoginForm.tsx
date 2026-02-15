@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { supabase } from '../../lib/supabase';
+import { auth } from '../../lib/firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -20,24 +21,14 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
     try {
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-
-        if (error) throw error;
+        await createUserWithEmailAndPassword(auth, email, password);
         
         setMessage({
           type: 'success',
-          text: 'Account created! Check your email for confirmation.',
+          text: 'Account created successfully!',
         });
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) throw error;
+        await signInWithEmailAndPassword(auth, email, password);
         
         setMessage({
           type: 'success',
