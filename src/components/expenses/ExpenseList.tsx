@@ -25,12 +25,12 @@ export function ExpenseList() {
 
   return (
     <div className="bg-white rounded-lg shadow-sm">
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-purple-200 bg-purple-50">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Recent Expenses</h3>
+          <h3 className="text-lg font-semibold text-purple-900">Recent Expenses</h3>
           <div className="text-right">
-            <p className="text-sm text-gray-600">This Month</p>
-            <p className="text-xl font-bold text-blue-600">{formatCurrency(monthlyTotal, false)}</p>
+            <p className="text-sm text-purple-600">This Month</p>
+            <p className="text-xl font-bold text-purple-600">{formatCurrency(monthlyTotal, false)}</p>
           </div>
         </div>
       </div>
