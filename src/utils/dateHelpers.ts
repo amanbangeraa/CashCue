@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 
 /**
- * Format date to display format (DD MMM YYYY)
+ * Format date to display format (DD MM YYYY)
  */
 export function formatDate(dateString: string): string {
   const date = new Date(dateString);
