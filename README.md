@@ -12,7 +12,9 @@ A comprehensive financial management application built with React, TypeScript, a
 [![Vite](https://img.shields.io/badge/Vite-7.3-646CFF?logo=vite)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwind-css)](https://tailwindcss.com/)
 
-[Features](#-features) • [Demo](#-demo) • [Installation](#-installation) • [Usage](#-usage) • [Tech Stack](#-tech-stack)
+🔗 **Live Demo**: [https://cashcue.vercel.app/](https://cashcue.vercel.app/)
+
+[Features](#-features) • [Demo](https://drive.google.com/drive/folders/1F9ryYZF1SdLK4CZa0GzUX9xxBZ76N3ZN) • [Installation](#-installation) • [Usage](#-usage) • [Tech Stack](#-tech-stack)
 
 </div>
 
@@ -63,14 +65,7 @@ CashCue is an intelligent financial management platform that helps users track e
 
 ## 🖼️ Demo
 
-### Dashboard
-![Dashboard](https://via.placeholder.com/800x400/111827/10B981?text=AI+Dashboard+with+Tax+Insights)
-
-### Portfolio Management
-![Portfolio](https://via.placeholder.com/800x400/111827/3B82F6?text=Real-time+Stock+Portfolio)
-
-### Expense Tracking
-![Expenses](https://via.placeholder.com/800x400/111827/8B5CF6?text=Smart+Expense+Tracking)
+📹 [View Demo Videos & Screenshots](https://drive.google.com/drive/folders/1LA3XPQjMJmlxm30Zu9qzAvPyVzW6oohZ)
 
 ---
 
