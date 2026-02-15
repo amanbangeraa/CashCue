@@ -15,6 +15,8 @@ const categories: ExpenseCategory[] = [
   'Shopping',
   'Bills',
   'Entertainment',
+  'Healthcare',
+  'Utilities',
   'Other',
 ];
 

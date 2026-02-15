@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Trash2, RefreshCw } from 'lucide-react';
 import { usePortfolio } from '../../context/PortfolioContext';
 import { calculateStockMetrics } from '../../utils/taxCalculations';
-import { formatCurrency, formatPercentage, formatWithSign, getGainLossColor, getGainLossBgColor } from '../../utils/formatters';
+import { formatCurrency, formatPercentage, formatWithSign, getGainLossColor } from '../../utils/formatters';
 import { formatDate } from '../../utils/dateHelpers';
 
 type FilterType = 'all' | 'gainers' | 'losers' | 'stcg' | 'ltcg';
@@ -112,29 +112,29 @@ export function PortfolioTable() {
               </th>
             </tr>
           </thead>
-          <tbody className="bg-transparent divide-y divide-[#1f2937]">
+          <tbody className="bg-[#111827] divide-y divide-[#1f2937]">
             {filteredStocks.map(stock => (
-              <tr key={stock.id} className={`${getGainLossBgColor(stock.gainLoss)} hover:bg-[#1f2937]/50 transition-colors`}>
+              <tr key={stock.id} className="hover:bg-[#1f2937] transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div>
-                    <div className="text-sm font-semibold text-white">{stock.stockName}</div>
-                    <div className="text-xs text-emerald-100">{stock.tickerSymbol}</div>
-                    <div className="text-xs text-slate-300">{formatDate(stock.buyDate)}</div>
+                    <div className="text-sm font-semibold text-slate-100">{stock.stockName}</div>
+                    <div className="text-xs text-slate-400">{stock.tickerSymbol}</div>
+                    <div className="text-xs text-slate-500">{formatDate(stock.buyDate)}</div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-white">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-slate-100">
                   {stock.quantity}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-white">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-slate-100">
                   {formatCurrency(stock.buyPrice)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-white">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-slate-100">
                   {formatCurrency(stock.currentPrice)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-white">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-slate-100">
                   {formatCurrency(stock.investedValue)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-white">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-slate-100">
                   {formatCurrency(stock.currentValue)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -149,13 +149,13 @@ export function PortfolioTable() {
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       stock.taxType === 'STCG'
-                        ? 'bg-red-500/20 text-red-100'
-                        : 'bg-emerald-500/20 text-emerald-100'
+                        ? 'bg-red-500/20 text-red-200'
+                        : 'bg-emerald-500/20 text-emerald-200'
                     }`}
                   >
                     {stock.taxType}
                   </span>
-                  <div className="text-xs text-slate-300 mt-1">
+                  <div className="text-xs text-slate-400 mt-1">
                     {stock.holdingPeriodDays} days
                   </div>
                 </td>

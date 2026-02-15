@@ -34,18 +34,18 @@ export function formatLargeNumber(num: number): string {
  * Get color class based on gain/loss
  */
 export function getGainLossColor(amount: number): string {
-  if (amount > 0) return 'text-green-600';
-  if (amount < 0) return 'text-red-600';
-  return 'text-gray-600';
+  if (amount > 0) return 'text-emerald-400';
+  if (amount < 0) return 'text-red-400';
+  return 'text-slate-400';
 }
 
 /**
  * Get background color class based on gain/loss
  */
 export function getGainLossBgColor(amount: number): string {
-  if (amount > 0) return 'bg-green-50';
-  if (amount < 0) return 'bg-red-50';
-  return 'bg-gray-50';
+  if (amount > 0) return 'bg-emerald-500/10';
+  if (amount < 0) return 'bg-red-500/10';
+  return 'bg-slate-500/10';
 }
 
 /**

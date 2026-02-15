@@ -125,17 +125,29 @@ export function TaxSummary() {
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
           Gains vs Losses Breakdown
         </h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`} />
-            <Tooltip formatter={(value: number | undefined) => value !== undefined ? formatCurrency(Math.abs(value)) : ''} />
-            <Legend />
-            <Bar dataKey="Gains" fill="#10B981" />
-            <Bar dataKey="Losses" fill="#EF4444" />
-          </BarChart>
-        </ResponsiveContainer>
+        {taxData.stcgGains === 0 && taxData.stcgLosses === 0 && taxData.ltcgGains === 0 && taxData.ltcgLosses === 0 ? (
+          <div className="h-[300px] flex items-center justify-center text-gray-500">
+            <div className="text-center">
+              <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <p className="text-lg font-medium">No gains or losses to display</p>
+              <p className="text-sm mt-2">Add stocks to your portfolio to see your tax breakdown</p>
+            </div>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`} />
+              <Tooltip formatter={(value: number | undefined) => value !== undefined ? formatCurrency(Math.abs(value)) : ''} />
+              <Legend />
+              <Bar dataKey="Gains" fill="#10B981" />
+              <Bar dataKey="Losses" fill="#EF4444" />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       {/* Tax Rules Explanation */}
