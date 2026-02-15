@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Plus, Upload } from 'lucide-react';
+import { Plus, Upload, Download } from 'lucide-react';
 import { usePortfolio } from '../../context/PortfolioContext';
 import type { Stock } from '../../types/portfolio.types';
 import { getTodayISO } from '../../utils/dateHelpers';
+import { getCurrentPrice } from '../../services/indianStockAPI';
 
 export function AddStockForm() {
   const { addStock } = usePortfolio();
   const [showForm, setShowForm] = useState(false);
+  const [fetchingPrice, setFetchingPrice] = useState(false);
   const [formData, setFormData] = useState({
     stockName: '',
     tickerSymbol: '',
@@ -42,6 +44,30 @@ export function AddStockForm() {
     });
     
     setShowForm(false);
+  };
+
+  const fetchCurrentPrice = async () => {
+    if (!formData.tickerSymbol && !formData.stockName) {
+      alert('Please enter ticker symbol or stock name first');
+      return;
+    }
+
+    setFetchingPrice(true);
+    try {
+      const symbol = formData.tickerSymbol || formData.stockName;
+      const price = await getCurrentPrice(symbol);
+      
+      if (price > 0) {
+        setFormData(prev => ({ ...prev, currentPrice: price.toString() }));
+      } else {
+        alert('Could not fetch price. Please enter manually or check the symbol.');
+      }
+    } catch (error) {
+      console.error('Error fetching price:', error);
+      alert('Failed to fetch price. Please enter manually.');
+    } finally {
+      setFetchingPrice(false);
+    }
   };
 
   const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,10 +107,10 @@ export function AddStockForm() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-900">Add Stock</h2>
-        <div className="flex space-x-2">
+    <div className="bg-[#111827] rounded-xl border border-[#1f2937] p-6 space-y-4">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <h2 className="text-xl font-bold text-white">Add Stock</h2>
+        <div className="flex gap-2 flex-wrap">
           <label className="cursor-pointer">
             <input
               type="file"
@@ -92,14 +118,14 @@ export function AddStockForm() {
               onChange={handleCSVUpload}
               className="hidden"
             />
-            <div className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">
+            <div className="flex items-center px-4 py-2 bg-[#1f2937] text-slate-100 rounded-lg border border-[#374151] hover:bg-[#374151] transition-colors">
               <Upload className="h-4 w-4 mr-2" />
               Upload CSV
             </div>
           </label>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="flex items-center px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors font-semibold"
           >
             <Plus className="h-4 w-4 mr-2" />
             {showForm ? 'Cancel' : 'Add Manually'}
@@ -109,83 +135,59 @@ export function AddStockForm() {
 
       {showForm && (
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Stock Name *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.stockName}
-              onChange={(e) => setFormData({ ...formData, stockName: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              placeholder="e.g., Reliance Industries"
-            />
-          </div>
+          {[
+            { key: 'stockName', label: 'Stock Name *', placeholder: 'e.g., Reliance Industries' },
+            { key: 'tickerSymbol', label: 'Ticker Symbol *', placeholder: 'e.g., RELIANCE' },
+            { key: 'quantity', label: 'Quantity *', placeholder: 'e.g., 100', type: 'number', min: '1' },
+            { key: 'buyPrice', label: 'Buy Price (₹) *', placeholder: 'e.g., 2200.50', type: 'number', min: '0.01', step: '0.01' },
+          ].map((field) => (
+            <div key={field.key}>
+              <label className="block text-sm font-semibold text-emerald-100 mb-1">
+                {field.label}
+              </label>
+              <input
+                type={field.type || 'text'}
+                required
+                min={field.min}
+                step={field.step}
+                value={(formData as any)[field.key]}
+                onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg bg-[#0d1117] border border-[#1f2937] text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                placeholder={field.placeholder}
+              />
+            </div>
+          ))}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Ticker Symbol *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.tickerSymbol}
-              onChange={(e) => setFormData({ ...formData, tickerSymbol: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              placeholder="e.g., RELIANCE"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Quantity *
-            </label>
-            <input
-              type="number"
-              required
-              min="1"
-              value={formData.quantity}
-              onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              placeholder="e.g., 100"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Buy Price (₹) *
-            </label>
-            <input
-              type="number"
-              required
-              min="0.01"
-              step="0.01"
-              value={formData.buyPrice}
-              onChange={(e) => setFormData({ ...formData, buyPrice: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              placeholder="e.g., 2200.50"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-semibold text-emerald-100 mb-1">
               Current Price (₹) *
             </label>
-            <input
-              type="number"
-              required
-              min="0.01"
-              step="0.01"
-              value={formData.currentPrice}
-              onChange={(e) => setFormData({ ...formData, currentPrice: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              placeholder="e.g., 2550.00"
-            />
+            <div className="flex gap-2">
+              <input
+                type="number"
+                required
+                min="0.01"
+                step="0.01"
+                value={formData.currentPrice}
+                onChange={(e) => setFormData({ ...formData, currentPrice: e.target.value })}
+                className="flex-1 px-3 py-2 rounded-lg bg-[#0d1117] border border-[#1f2937] text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                placeholder="e.g., 2550.00"
+              />
+              <button
+                type="button"
+                onClick={fetchCurrentPrice}
+                disabled={fetchingPrice}
+                className="px-3 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                title="Fetch current market price"
+              >
+                <Download className={`h-4 w-4 ${fetchingPrice ? 'animate-bounce' : ''}`} />
+              </button>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">Click icon to fetch live price</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-semibold text-emerald-100 mb-1">
               Buy Date *
             </label>
             <input
@@ -193,14 +195,14 @@ export function AddStockForm() {
               required
               value={formData.buyDate}
               onChange={(e) => setFormData({ ...formData, buyDate: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 rounded-lg bg-[#0d1117] border border-[#1f2937] text-slate-100 focus:outline-none focus:border-emerald-500"
             />
           </div>
 
           <div className="md:col-span-2">
             <button
               type="submit"
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+              className="w-full px-4 py-3 bg-emerald-500 text-white rounded-lg font-semibold hover:bg-emerald-600 transition-colors"
             >
               Add Stock to Portfolio
             </button>
@@ -208,11 +210,11 @@ export function AddStockForm() {
         </form>
       )}
 
-      <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-        <p className="text-sm text-blue-800">
-          <strong>CSV Format:</strong> ticker, quantity, buy_price, buy_date
+      <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-50">
+        <p className="text-sm font-semibold">
+          CSV Format: ticker, quantity, buy_price, buy_date
           <br />
-          <span className="text-xs">Example: INFY, 100, 1400, 2023-01-15</span>
+          <span className="text-xs text-emerald-100/80">Example: INFY, 100, 1400, 2023-01-15</span>
         </p>
       </div>
     </div>

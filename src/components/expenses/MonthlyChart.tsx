@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useExpenses } from '../../context/ExpenseContext';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const COLORS = {
   Food: '#10B981',
@@ -8,7 +8,9 @@ const COLORS = {
   Shopping: '#F59E0B',
   Bills: '#EF4444',
   Entertainment: '#8B5CF6',
-  Other: '#6B7280',
+  Healthcare: '#6B7280',
+  Utilities: '#64748B',
+  Other: '#94A3B8',
 };
 
 export function MonthlyChart() {
@@ -45,68 +47,71 @@ export function MonthlyChart() {
 
   if (categoryData.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Spending by Category</h3>
-        <p className="text-gray-500 text-center py-8">No expense data for this month</p>
+      <div className="bg-[#111827] rounded-xl border border-[#1f2937] p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Spending by Category</h3>
+        <p className="text-slate-400 text-center py-8">No expense data for this month</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+    <div className="bg-[#111827] rounded-xl border border-[#1f2937] p-6">
+      <h3 className="text-lg font-semibold text-white mb-2">
         Spending by Category
       </h3>
       
       <div className="text-center mb-4">
-        <p className="text-sm text-gray-600">Total This Month</p>
-        <p className="text-2xl font-bold text-gray-900">
-          ₹{totalSpent.toLocaleString('en-IN')}
+        <p className="text-sm text-slate-400">Total This Month</p>
+        <p className="text-3xl font-bold text-white">
+          ₹{totalSpent.toFixed(2)}
         </p>
       </div>
 
-      <ResponsiveContainer width="100%" height={250}>
+      <ResponsiveContainer width="100%" height={320}>
         <PieChart>
           <Pie
             data={categoryData}
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={(entry) => entry.percent ? `${(entry.percent * 100).toFixed(1)}%` : ''}
-            outerRadius={80}
+            label={(entry: any) => `${entry.percentage}%`}
+            outerRadius={100}
+            innerRadius={60}
             fill="#8884d8"
             dataKey="value"
+            paddingAngle={2}
           >
             {categoryData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[entry.name as keyof typeof COLORS] || COLORS.Other} />
             ))}
           </Pie>
           <Tooltip 
-            formatter={(value: number | undefined) => value !== undefined ? `₹${value.toLocaleString('en-IN')}` : ''}
-          />
-          <Legend 
-            verticalAlign="bottom" 
-            height={36}
-            formatter={(value, entry: any) => `${value} (${entry.payload.percentage}%)`}
+            contentStyle={{ 
+              backgroundColor: '#1f2937', 
+              border: '1px solid #374151',
+              borderRadius: '0.5rem',
+              color: '#fff'
+            }}
+            formatter={(value: number | undefined) => value !== undefined ? `₹${value.toFixed(2)}` : ''}
           />
         </PieChart>
       </ResponsiveContainer>
 
       <div className="mt-4 space-y-2">
         {categoryData.map((item) => (
-          <div key={item.name} className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
+          <div key={item.name} className="flex items-center justify-between p-2 rounded-lg hover:bg-[#1f2937]/50 transition-colors">
+            <div className="flex items-center gap-3">
               <div 
-                className="w-3 h-3 rounded-full" 
+                className="w-4 h-4 rounded-full flex-shrink-0" 
                 style={{ backgroundColor: COLORS[item.name as keyof typeof COLORS] || COLORS.Other }}
               />
-              <span className="text-gray-700">{item.name}</span>
+              <span className="text-slate-200 text-sm font-medium">{item.name}</span>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="font-semibold text-gray-900">
-                ₹{item.value.toLocaleString('en-IN')}
+            <div className="flex items-center gap-4">
+              <span className="font-semibold text-white text-sm">
+                ₹{item.value.toFixed(2)}
               </span>
-              <span className="text-gray-500 w-12 text-right">
+              <span className="text-slate-400 text-sm font-medium min-w-[3rem] text-right">
                 {item.percentage}%
               </span>
             </div>

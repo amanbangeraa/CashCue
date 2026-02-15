@@ -1,57 +1,57 @@
 export const designSystem = {
   colors: {
-    // Primary - Indigo (Professional, trustworthy)
+    // Primary - Emerald neon gradient
     primary: {
-      50: '#EEF2FF',
-      100: '#E0E7FF',
-      200: '#C7D2FE',
-      300: '#A5B4FC',
-      400: '#818CF8',
-      500: '#6366F1',
-      600: '#4F46E5',
-      700: '#4338CA',
-      800: '#3730A3',
-      900: '#312E81',
+      50: '#e6fff4',
+      100: '#c0ffe3',
+      200: '#8bffd0',
+      300: '#4dfab7',
+      400: '#22e19c',
+      500: '#12c586',
+      600: '#0ea672',
+      700: '#0a865f',
+      800: '#0c6a50',
+      900: '#0d5743',
     },
     
-    // Success - Green
+    // Success - Lime punch
     success: {
-      50: '#F0FDF4',
-      100: '#DCFCE7',
-      500: '#22C55E',
-      600: '#16A34A',
-      700: '#15803D',
+      50: '#f1ffe5',
+      100: '#ddffc2',
+      500: '#7ce322',
+      600: '#5ac010',
+      700: '#3a9c0c',
     },
     
     // Warning - Amber
     warning: {
-      50: '#FFFBEB',
-      100: '#FEF3C7',
-      500: '#F59E0B',
-      600: '#D97706',
+      50: '#fff5e6',
+      100: '#ffe4bf',
+      500: '#f9a825',
+      600: '#d48c11',
     },
     
-    // Danger - Red
+    // Danger - Coral red
     danger: {
-      50: '#FEF2F2',
-      100: '#FEE2E2',
-      500: '#EF4444',
-      600: '#DC2626',
-      700: '#B91C1C',
+      50: '#fff0f0',
+      100: '#ffdede',
+      500: '#ff5757',
+      600: '#e14242',
+      700: '#c12c2c',
     },
     
-    // Neutral - Gray
+    // Neutral - Charcoal slate
     gray: {
-      50: '#F9FAFB',
-      100: '#F3F4F6',
-      200: '#E5E7EB',
-      300: '#D1D5DB',
-      400: '#9CA3AF',
-      500: '#6B7280',
-      600: '#4B5563',
-      700: '#374151',
-      800: '#1F2937',
-      900: '#111827',
+      50: '#eef3fb',
+      100: '#dce5f3',
+      200: '#c2d0e2',
+      300: '#9fb5cb',
+      400: '#7f97ad',
+      500: '#657c93',
+      600: '#4f6377',
+      700: '#3c4d5f',
+      800: '#283445',
+      900: '#121a24',
     },
   },
   
@@ -84,7 +84,7 @@ export const designSystem = {
   
   typography: {
     fontFamily: {
-      sans: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      sans: 'Outfit, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
       mono: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
     },
     fontSize: {

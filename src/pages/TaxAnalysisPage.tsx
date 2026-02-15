@@ -4,9 +4,10 @@ import { HarvestingRecommendations } from '../components/portfolio/HarvestingRec
 export function TaxAnalysisPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-red-600 mb-2">Tax Analysis</h1>
-        <p className="text-red-600">
+      <div className="space-y-2">
+        <div className="pill w-max">Tax</div>
+        <h1 className="text-3xl font-bold text-white">Tax Analysis</h1>
+        <p className="text-slate-300">
           Discover tax-saving opportunities through loss harvesting
         </p>
       </div>

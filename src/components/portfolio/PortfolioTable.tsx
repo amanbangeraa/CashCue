@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, RefreshCw } from 'lucide-react';
 import { usePortfolio } from '../../context/PortfolioContext';
 import { calculateStockMetrics } from '../../utils/taxCalculations';
 import { formatCurrency, formatPercentage, formatWithSign, getGainLossColor, getGainLossBgColor } from '../../utils/formatters';
@@ -8,7 +8,7 @@ import { formatDate } from '../../utils/dateHelpers';
 type FilterType = 'all' | 'gainers' | 'losers' | 'stcg' | 'ltcg';
 
 export function PortfolioTable() {
-  const { stocks, removeStock } = usePortfolio();
+  const { stocks, removeStock, refreshPrices, refreshing, lastRefresh } = usePortfolio();
   const [filter, setFilter] = useState<FilterType>('all');
 
   const stocksWithMetrics = useMemo(() => {
@@ -34,90 +34,107 @@ export function PortfolioTable() {
 
   if (stocks.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-        <p className="text-gray-500">No stocks in portfolio. Add your first stock to get started!</p>
+      <div className="bg-[#111827] rounded-xl border border-[#1f2937] p-8 text-center">
+        <p className="text-slate-200">No stocks in portfolio. Add your first stock to get started!</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm">
+    <div className="bg-[#111827] rounded-xl border border-[#1f2937]">
       {/* Filter Buttons */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex space-x-2">
+      <div className="p-4 border-b border-[#1f2937] flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap gap-2">
           {(['all', 'gainers', 'losers', 'stcg', 'ltcg'] as FilterType[]).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
                 filter === f
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-[#1f2937] text-slate-100 hover:bg-[#374151]'
               }`}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
         </div>
+        
+        <div className="flex items-center gap-3">
+          {lastRefresh && (
+            <span className="text-xs text-slate-400">
+              Updated: {lastRefresh.toLocaleTimeString()}
+            </span>
+          )}
+          <button
+            onClick={refreshPrices}
+            disabled={refreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-semibold hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Refresh stock prices"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Updating...' : 'Refresh Prices'}
+          </button>
+        </div>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-[#1f2937] text-slate-100">
+          <thead className="bg-[#0d1117]">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
                 Stock
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-semibold text-slate-300 uppercase tracking-wider">
                 Quantity
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-semibold text-slate-300 uppercase tracking-wider">
                 Buy Price
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-semibold text-slate-300 uppercase tracking-wider">
                 Current Price
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-semibold text-slate-300 uppercase tracking-wider">
                 Invested
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-semibold text-slate-300 uppercase tracking-wider">
                 Current Value
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-semibold text-slate-300 uppercase tracking-wider">
                 Gain/Loss
               </th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-center text-xs font-semibold text-slate-300 uppercase tracking-wider">
                 Tax Type
               </th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-center text-xs font-semibold text-slate-300 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-transparent divide-y divide-[#1f2937]">
             {filteredStocks.map(stock => (
-              <tr key={stock.id} className={`${getGainLossBgColor(stock.gainLoss)} hover:opacity-75 transition-opacity`}>
+              <tr key={stock.id} className={`${getGainLossBgColor(stock.gainLoss)} hover:bg-[#1f2937]/50 transition-colors`}>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div>
-                    <div className="text-sm font-medium text-gray-900">{stock.stockName}</div>
-                    <div className="text-xs text-gray-500">{stock.tickerSymbol}</div>
-                    <div className="text-xs text-gray-400">{formatDate(stock.buyDate)}</div>
+                    <div className="text-sm font-semibold text-white">{stock.stockName}</div>
+                    <div className="text-xs text-emerald-100">{stock.tickerSymbol}</div>
+                    <div className="text-xs text-slate-300">{formatDate(stock.buyDate)}</div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-white">
                   {stock.quantity}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-white">
                   {formatCurrency(stock.buyPrice)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-white">
                   {formatCurrency(stock.currentPrice)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-white">
                   {formatCurrency(stock.investedValue)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-white">
                   {formatCurrency(stock.currentValue)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -132,20 +149,20 @@ export function PortfolioTable() {
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       stock.taxType === 'STCG'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-green-100 text-green-800'
+                        ? 'bg-red-500/20 text-red-100'
+                        : 'bg-emerald-500/20 text-emerald-100'
                     }`}
                   >
                     {stock.taxType}
                   </span>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-slate-300 mt-1">
                     {stock.holdingPeriodDays} days
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-center">
                   <button
                     onClick={() => removeStock(stock.id)}
-                    className="text-red-600 hover:text-red-900"
+                    className="text-red-200 hover:text-red-100"
                     title="Remove stock"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -158,7 +175,7 @@ export function PortfolioTable() {
       </div>
 
       {filteredStocks.length === 0 && (
-        <div className="p-8 text-center text-gray-500">
+        <div className="p-8 text-center text-slate-300">
           No stocks match the current filter.
         </div>
       )}

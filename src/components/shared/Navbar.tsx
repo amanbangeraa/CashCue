@@ -27,53 +27,50 @@ export function Navbar({ currentPage, onNavigate }: NavbarProps) {
   };
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center">
-              <TrendingUp className="h-8 w-8 text-blue-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">
-                TaxSaver Portfolio
-              </span>
-            </div>
+    <nav className="bg-[#111827] rounded-xl border border-[#1f2937]">
+      <div className="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        {/* Logo */}
+        <div className="flex items-center gap-3">
+          <div className="h-11 w-11 rounded-lg bg-emerald-500 flex items-center justify-center text-white">
+            <TrendingUp className="h-5 w-5" />
           </div>
+          <div>
+            <div className="text-xs uppercase tracking-[0.18em] text-emerald-200/90 font-semibold">CashCue</div>
+            <div className="text-lg font-bold text-white">Wealth Control</div>
+          </div>
+        </div>
 
-          {/* Navigation Links */}
-          <div className="flex items-center space-x-1">
-            {navItems.map(item => {
-              const Icon = item.icon;
-              const isActive = currentPage === item.id;
-              
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onNavigate(item.id)}
-                  className={`
-                    flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors
-                    ${isActive
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }
-                  `}
-                >
-                  <Icon className="h-4 w-4 mr-2" />
-                  {item.label}
-                </button>
-              );
-            })}
+        {/* Navigation Links */}
+        <div className="flex items-center gap-2 overflow-x-auto">
+          {navItems.map(item => {
+            const Icon = item.icon;
+            const isActive = currentPage === item.id;
             
-            {/* Logout Button */}
-            <button
-              onClick={handleLogout}
-              className="flex items-center px-4 py-2 ml-4 rounded-md text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-              title="Logout"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </button>
-          </div>
+            return (
+              <button
+                key={item.id}
+                onClick={() => onNavigate(item.id)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all
+                  ${isActive
+                    ? 'bg-emerald-500 text-white'
+                    : 'text-slate-300 hover:bg-[#1f2937]'
+                  }`}
+              >
+                <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-emerald-200'}`} />
+                {item.label}
+              </button>
+            );
+          })}
+
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold text-red-300 hover:bg-red-500/10 transition-all ml-2"
+            title="Logout"
+          >
+            <LogOut className="h-4 w-4" />
+            Logout
+          </button>
         </div>
       </div>
     </nav>
