@@ -25,32 +25,19 @@ function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('Setting up Firebase auth listener...');
-    console.log('Auth object:', auth);
-    
-    try {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        console.log('Auth state changed:', user ? 'User logged in' : 'No user');
-        console.log('User object:', user);
-        console.log('Setting loading to false');
-        setUser(user);
-        setLoading(false);
-      }, (error) => {
-        console.error('Auth error:', error);
-        setError(error.message);
-        setLoading(false);
-      });
-
-      return () => unsubscribe();
-    } catch (err) {
-      console.error('Failed to set up auth listener:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
       setLoading(false);
-    }
+    }, (error) => {
+      console.error('Auth error:', error);
+      setError(error.message);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   if (loading) {
-    console.log('Rendering: Loading state');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -62,7 +49,6 @@ function App() {
   }
 
   if (error) {
-    console.log('Rendering: Error state -', error);
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md p-6 bg-white rounded-lg shadow-md">
@@ -80,15 +66,12 @@ function App() {
   }
 
   if (!user) {
-    console.log('Rendering: Login form (no user)');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <LoginForm onSuccess={() => {}} />
       </div>
     );
   }
-
-  console.log('Rendering: Main app (user logged in)');
 
   const renderPage = () => {
     switch (currentPage) {

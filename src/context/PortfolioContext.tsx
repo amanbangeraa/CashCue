@@ -11,7 +11,6 @@ interface PortfolioContextType {
   addStock: (stock: Stock) => void;
   removeStock: (id: string) => void;
   updateStock: (id: string, stock: Partial<Stock>) => void;
-  loadDemoData: () => void;
   clearPortfolio: () => void;
   loading: boolean;
   error: string | null;
@@ -116,11 +115,6 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const loadDemoData = async () => {
-    const { demoStocks } = await import('../data/demoPortfolio');
-    setStocks(demoStocks);
-  };
-
   const clearPortfolio = async () => {
     try {
       const user = auth.currentUser;
@@ -151,7 +145,6 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
         addStock,
         removeStock,
         updateStock,
-        loadDemoData,
         clearPortfolio,
         loading,
         error,

@@ -10,7 +10,6 @@ interface ExpenseContextType {
   expenses: Expense[];
   addExpense: (expense: Expense) => void;
   removeExpense: (id: string) => void;
-  loadDemoData: () => void;
   clearExpenses: () => void;
   loading: boolean;
   error: string | null;
@@ -94,11 +93,6 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const loadDemoData = async () => {
-    const { demoExpenses } = await import('../data/demoExpenses');
-    setExpenses(demoExpenses);
-  };
-
   const clearExpenses = async () => {
     try {
       const user = auth.currentUser;
@@ -128,7 +122,6 @@ export function ExpenseProvider({ children }: { children: ReactNode }) {
         expenses,
         addExpense,
         removeExpense,
-        loadDemoData,
         clearExpenses,
         loading,
         error,
