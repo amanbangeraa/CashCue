@@ -1,16 +1,13 @@
 import { useMemo, useEffect, useState } from 'react';
-import { TrendingUp, Wallet, TrendingDown, DollarSign, ArrowRight } from 'lucide-react';
+import { Loader2, RefreshCw, AlertTriangle, PieChart } from 'lucide-react';
 import { usePortfolio } from '../context/PortfolioContext';
-import { StatCard } from '../components/shared/StatCard';
-import { calculatePortfolioSummary, generateHarvestPlan } from '../utils/taxCalculations';
-import { formatLargeNumber, formatWithSign } from '../utils/formatters';
 import { generateTaxInsights, generateDemoPortfolio } from '../services/aiAnalyzer';
 import type { AIAnalysisResult } from '../services/aiAnalyzer';
 import { PortfolioHealthScore } from '../components/ai/PortfolioHealthScore';
 import { InsightCard } from '../components/ai/InsightCard';
 import { TimelineView } from '../components/ai/TimelineView';
 import { ScenarioComparison } from '../components/ai/ScenarioComparison';
-import { LoadingSpinner } from '../components/ai/LoadingSpinner';
+import { StatsCards } from '../components/dashboard/StatsCards';
 
 interface DashboardProps {
   onNavigate: (page: 'portfolio' | 'tax-analysis') => void;
@@ -22,11 +19,33 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const [aiLoading, setAiLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const summary = useMemo(() => calculatePortfolioSummary(stocks), [stocks]);
-  const harvestPlan = useMemo(() => generateHarvestPlan(stocks), [stocks]);
+  // Calculate portfolio stats
+  const portfolioStats = useMemo(() => {
+    const totalValue = stocks.reduce((sum, s) => sum + (s.currentPrice * s.quantity), 0);
+    const totalInvested = stocks.reduce((sum, s) => sum + (s.buyPrice * s.quantity), 0);
+    const totalPL = totalValue - totalInvested;
+    
+    return { totalValue, totalInvested, totalPL };
+  }, [stocks]);
 
   // Calculate realized gains (you can enhance this with actual data from your context)
   const realizedGains = 0;
+
+  const handleRefresh = async () => {
+    setAiLoading(true);
+    try {
+      const totalValue = stocks.reduce((sum, s) => sum + (s.currentPrice * s.quantity), 0);
+      const portfolioToAnalyze = stocks.length < 5 || totalValue < 100000 
+        ? generateDemoPortfolio() 
+        : stocks;
+      const result = await generateTaxInsights(portfolioToAnalyze, realizedGains);
+      setAnalysis(result);
+    } catch (err) {
+      console.error('Refresh failed:', err);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   // Trigger AI analysis when stocks are loaded
   useEffect(() => {
@@ -66,337 +85,199 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   // Loading state
   if (stocksLoading || (aiLoading && !analysis)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner message="🤖 AI is analyzing your portfolio..." />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-4">
+            <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+          </div>
+          <p className="text-gray-700 font-medium">Analyzing your portfolio</p>
+          <p className="text-gray-500 text-sm mt-1">This may take a few seconds</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl border-2 border-red-200 p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-600" />
+          </div>
+          <h3 className="font-semibold text-xl text-gray-900 mb-2">Analysis Error</h3>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button 
+            onClick={handleRefresh}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
 
   // No stocks state
-  if (stocks.length === 0) {
+  if (stocks.length === 0 || !analysis) {
     return (
-      <div className="space-y-8">
-        {/* Hero Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-xl p-12 text-white">
-          <div className="max-w-3xl">
-            <h1 className="text-5xl font-bold mb-4">
-              Welcome to CashCue! 📊
-            </h1>
-            <p className="text-xl text-blue-100 mb-6">
-              Add stocks to your portfolio to get AI-powered tax optimization insights
-            </p>
-            <button
-              onClick={() => onNavigate('portfolio')}
-              className="inline-flex items-center px-6 py-3 bg-white text-blue-700 font-semibold rounded-lg hover:bg-blue-50 transition-colors shadow-lg"
-            >
-              Add Your First Stock
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </button>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <PieChart className="w-10 h-10 text-gray-400" />
           </div>
+          <h3 className="font-semibold text-2xl text-gray-900 mb-2">No Portfolio Data</h3>
+          <p className="text-gray-600 mb-6">Add stocks to get AI-powered tax insights</p>
+          <button 
+            onClick={() => onNavigate('portfolio')}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+          >
+            Add Stocks
+          </button>
         </div>
       </div>
     );
   }
 
   // AI-Powered Dashboard with analysis
-  if (analysis && !error) {
-    const highPriorityInsights = analysis.insights.filter(i => i.priority === 'high');
-    const mediumPriorityInsights = analysis.insights.filter(i => i.priority === 'medium');
-    const lowPriorityInsights = analysis.insights.filter(i => i.priority === 'low');
-
-    return (
-      <div className="space-y-8">
-        {/* Portfolio Health Score - Hero Section */}
-        <PortfolioHealthScore
-          score={analysis.health_score}
-          strengths={analysis.strengths}
-          weaknesses={analysis.weaknesses}
-          totalSavings={analysis.total_potential_savings}
-        />
-
-        {/* Urgent Actions Alert */}
-        {analysis.urgent_actions.length > 0 && (
-          <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl p-6 shadow-lg">
-            <h3 className="font-bold text-xl mb-3 flex items-center gap-2">
-              <span className="text-2xl">🚨</span>
-              Urgent Actions Required
-            </h3>
-            <ul className="space-y-2">
-              {analysis.urgent_actions.map((action, idx) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <span className="font-bold mt-0.5">•</span>
-                  <span>{action}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
-            title="Portfolio Value"
-            value={formatLargeNumber(summary.totalCurrent)}
-            icon={Wallet}
-            color="blue"
-          />
-          <StatCard
-            title="Total Invested"
-            value={formatLargeNumber(summary.totalInvested)}
-            icon={DollarSign}
-            color="green"
-          />
-          <StatCard
-            title="Total P&L"
-            value={formatWithSign(summary.totalGainLoss)}
-            icon={summary.totalGainLoss >= 0 ? TrendingUp : TrendingDown}
-            color={summary.totalGainLoss >= 0 ? 'green' : 'red'}
-          />
-          <StatCard
-            title="Tax Savings"
-            value={formatLargeNumber(harvestPlan.totalTaxSavings)}
-            icon={TrendingUp}
-            color="green"
-          />
-        </div>
-
-        {/* High Priority Insights */}
-        {highPriorityInsights.length > 0 && (
-          <section>
-            <h2 className="text-3xl font-bold mb-4 flex items-center gap-2">
-              🔥 High Priority Actions
-            </h2>
-            <div className="grid gap-6">
-              {highPriorityInsights.map((insight, idx) => (
-                <InsightCard key={idx} insight={insight} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Timeline */}
-        {analysis.timeline_events.length > 0 && (
-          <section>
-            <h2 className="text-3xl font-bold mb-6">📅 Critical Dates</h2>
-            <TimelineView events={analysis.timeline_events} />
-          </section>
-        )}
-
-        {/* Scenarios */}
-        {analysis.scenarios.length > 0 && (
-          <section>
-            <h2 className="text-3xl font-bold mb-6">💡 Tax Optimization Scenarios</h2>
-            <ScenarioComparison 
-              scenarios={analysis.scenarios}
-              recommendedIndex={analysis.recommended_scenario}
-            />
-          </section>
-        )}
-
-        {/* Medium Priority Insights */}
-        {mediumPriorityInsights.length > 0 && (
-          <section>
-            <h2 className="text-3xl font-bold mb-4">⚡ Medium Priority Opportunities</h2>
-            <div className="grid gap-6">
-              {mediumPriorityInsights.map((insight, idx) => (
-                <InsightCard key={idx} insight={insight} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Low Priority Insights */}
-        {lowPriorityInsights.length > 0 && (
-          <section>
-            <h2 className="text-3xl font-bold mb-4">💡 Additional Optimizations</h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              {lowPriorityInsights.map((insight, idx) => (
-                <InsightCard key={idx} insight={insight} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Metadata Footer */}
-        <div className="text-center text-sm text-gray-500 pt-8 border-t">
-          Analysis generated by Groq (Llama 3.3) on{' '}
-          {new Date(analysis.generated_at).toLocaleString('en-IN')}
-        </div>
-      </div>
-    );
-  }
-
-  // Fallback to basic dashboard if AI fails
+  const highPriorityInsights = analysis.insights.filter(i => i.priority === 'high');
+  const otherInsights = analysis.insights.filter(i => i.priority !== 'high');
 
   return (
-    <div className="space-y-8">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg shadow-xl p-12 text-white">
-        <div className="max-w-3xl">
-          <h1 className="text-5xl font-bold mb-4">
-            Your portfolio has {formatLargeNumber(harvestPlan.totalTaxSavings)} in hidden tax savings
-          </h1>
-          <p className="text-xl text-blue-100 mb-6">
-            Unlock them with smart tax loss harvesting
-          </p>
-          <button
-            onClick={() => onNavigate('tax-analysis')}
-            className="inline-flex items-center px-6 py-3 bg-white text-blue-700 font-semibold rounded-lg hover:bg-blue-50 transition-colors shadow-lg"
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Page Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Tax Dashboard</h1>
+            <p className="text-gray-600 mt-1">AI-powered portfolio optimization</p>
+          </div>
+          
+          <button 
+            onClick={handleRefresh}
+            disabled={aiLoading}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium disabled:opacity-50"
           >
-            Analyze My Portfolio for Tax Savings
-            <ArrowRight className="ml-2 h-5 w-5" />
+            <RefreshCw className={`w-4 h-4 ${aiLoading ? 'animate-spin' : ''}`} />
+            Refresh
           </button>
         </div>
-      </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Portfolio Value"
-          value={formatLargeNumber(summary.totalCurrent)}
-          icon={Wallet}
-          color="blue"
-        />
-        <StatCard
-          title="Total Invested"
-          value={formatLargeNumber(summary.totalInvested)}
-          icon={DollarSign}
-          color="gray"
-        />
-        <StatCard
-          title="Unrealized Gain/Loss"
-          value={formatWithSign(summary.totalGainLoss)}
-          icon={summary.totalGainLoss >= 0 ? TrendingUp : TrendingDown}
-          color={summary.totalGainLoss >= 0 ? 'green' : 'red'}
-          subtitle={`${summary.totalGainLoss >= 0 ? '+' : ''}${summary.totalGainLossPercentage.toFixed(2)}%`}
-        />
-        <StatCard
-          title="Potential Tax Savings"
-          value={formatLargeNumber(harvestPlan.totalTaxSavings)}
-          icon={TrendingDown}
-          color="green"
-          large
-        />
-      </div>
+        <div className="space-y-8">
+          {/* Stats Cards */}
+          <StatsCards
+            portfolioValue={portfolioStats.totalValue}
+            totalInvested={portfolioStats.totalInvested}
+            totalPL={portfolioStats.totalPL}
+            taxSavings={analysis.total_potential_savings}
+          />
 
-      {/* Quick Links */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <button
-          onClick={() => onNavigate('portfolio')}
-          className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow text-left border-2 border-transparent hover:border-blue-300"
-        >
-          <Wallet className="h-8 w-8 text-blue-600 mb-3" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">View Portfolio</h3>
-          <p className="text-sm text-gray-600">
-            See all your holdings with real-time gains and losses
-          </p>
-          <div className="mt-4 text-blue-600 font-medium flex items-center">
-            View Details
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </div>
-        </button>
+          {/* Health Score */}
+          <PortfolioHealthScore
+            score={analysis.health_score}
+            strengths={analysis.strengths}
+            weaknesses={analysis.weaknesses}
+            totalSavings={analysis.total_potential_savings}
+          />
 
-        <button
-          onClick={() => onNavigate('tax-analysis')}
-          className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow text-left border-2 border-transparent hover:border-green-300"
-        >
-          <TrendingDown className="h-8 w-8 text-green-600 mb-3" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Tax Analysis</h3>
-          <p className="text-sm text-gray-600">
-            Get personalized tax loss harvesting recommendations
-          </p>
-          <div className="mt-4 text-green-600 font-medium flex items-center">
-            Analyze Now
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </div>
-        </button>
-
-        <button
-          onClick={() => onNavigate('portfolio')}
-          className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow text-left border-2 border-transparent hover:border-blue-300"
-        >
-          <TrendingUp className="h-8 w-8 text-blue-600 mb-3" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Add Stock</h3>
-          <p className="text-sm text-gray-600">
-            Add stocks manually or upload CSV to build your portfolio
-          </p>
-          <div className="mt-4 text-blue-600 font-medium flex items-center">
-            Add Now
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </div>
-        </button>
-      </div>
-
-      {/* Info Section */}
-      <div className="bg-white rounded-lg shadow-sm p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          What is Tax Loss Harvesting?
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-          <div>
-            <div className="bg-blue-100 rounded-lg p-3 mb-3 inline-block">
-              <span className="text-2xl">📉</span>
+          {/* Urgent Actions */}
+          {analysis.urgent_actions.length > 0 && (
+            <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl p-6 shadow-md">
+              <h3 className="font-bold text-xl mb-3 flex items-center gap-2">
+                <AlertTriangle className="w-6 h-6" />
+                Urgent Actions Required
+              </h3>
+              <ul className="space-y-2">
+                {analysis.urgent_actions.map((action, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="font-bold mt-0.5">•</span>
+                    <span>{action}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <h3 className="font-semibold text-gray-900 mb-2">Identify Losses</h3>
-            <p className="text-gray-600">
-              Find stocks in your portfolio that are currently at a loss
-            </p>
-          </div>
-          <div>
-            <div className="bg-green-100 rounded-lg p-3 mb-3 inline-block">
-              <span className="text-2xl">💰</span>
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-2">Offset Gains</h3>
-            <p className="text-gray-600">
-              Use these losses to offset your capital gains and reduce tax liability
-            </p>
-          </div>
-          <div>
-            <div className="bg-yellow-100 rounded-lg p-3 mb-3 inline-block">
-              <span className="text-2xl">🔄</span>
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-2">Rebuy & Save</h3>
-            <p className="text-gray-600">
-              Rebuy the same stocks to maintain your position while saving on taxes
+          )}
+
+          {/* High Priority Insights */}
+          {highPriorityInsights.length > 0 && (
+            <section>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-1 h-8 bg-red-500 rounded-full" />
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Priority Actions</h2>
+                  <p className="text-sm text-gray-600">Immediate attention required</p>
+                </div>
+              </div>
+              <div className="grid gap-6">
+                {highPriorityInsights.map((insight, idx) => (
+                  <InsightCard key={idx} insight={insight} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Timeline */}
+          {analysis.timeline_events.length > 0 && (
+            <section>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-1 h-8 bg-indigo-500 rounded-full" />
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Critical Dates</h2>
+                  <p className="text-sm text-gray-600">Important deadlines and milestones</p>
+                </div>
+              </div>
+              <TimelineView events={analysis.timeline_events} />
+            </section>
+          )}
+
+          {/* Scenarios */}
+          {analysis.scenarios.length > 0 && (
+            <section>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-1 h-8 bg-indigo-500 rounded-full" />
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Tax Scenarios</h2>
+                  <p className="text-sm text-gray-600">Compare different strategies</p>
+                </div>
+              </div>
+              <ScenarioComparison 
+                scenarios={analysis.scenarios}
+                recommendedIndex={analysis.recommended_scenario}
+              />
+            </section>
+          )}
+
+          {/* Other Insights */}
+          {otherInsights.length > 0 && (
+            <section>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-1 h-8 bg-gray-400 rounded-full" />
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Additional Opportunities</h2>
+                  <p className="text-sm text-gray-600">More ways to optimize your taxes</p>
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 gap-6">
+                {otherInsights.map((insight, idx) => (
+                  <InsightCard key={idx} insight={insight} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Footer */}
+          <div className="text-center pt-8 border-t border-gray-200">
+            <p className="text-sm text-gray-500">
+              Powered by Groq (Llama 3.3) • Last updated{' '}
+              {new Date(analysis.generated_at).toLocaleString('en-IN', {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+              })}
             </p>
           </div>
         </div>
       </div>
-
-      {/* Portfolio Stats */}
-      {stocks.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">Portfolio Overview</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600 mb-1">Total Holdings</p>
-              <p className="text-2xl font-bold text-gray-900">{summary.numberOfHoldings}</p>
-            </div>
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-gray-600 mb-1">Current Value</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {formatLargeNumber(summary.totalCurrent)}
-              </p>
-            </div>
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600 mb-1">Invested</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {formatLargeNumber(summary.totalInvested)}
-              </p>
-            </div>
-            <div className={`text-center p-4 rounded-lg ${
-              summary.totalGainLoss >= 0 ? 'bg-green-50' : 'bg-red-50'
-            }`}>
-              <p className="text-sm text-gray-600 mb-1">Returns</p>
-              <p className={`text-2xl font-bold ${
-                summary.totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {summary.totalGainLossPercentage.toFixed(2)}%
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
