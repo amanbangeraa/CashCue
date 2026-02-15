@@ -11,7 +11,7 @@ import { UrgentActionsBanner } from '../components/ai/UrgentActionsBanner';
 import { StatsCards } from '../components/dashboard/StatsCards';
 
 interface DashboardProps {
-  onNavigate: (page: 'portfolio' | 'tax-analysis') => void;
+  onNavigate: (page: 'portfolio') => void;
 }
 
 export function Dashboard({ onNavigate }: DashboardProps) {

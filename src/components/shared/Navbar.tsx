@@ -1,10 +1,10 @@
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, Calculator, DollarSign, LogOut } from 'lucide-react';
+import { TrendingUp, Wallet, PiggyBank, Calculator, DollarSign, LogOut } from 'lucide-react';
 import { auth } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
 
 interface NavbarProps {
-  currentPage: 'dashboard' | 'portfolio' | 'tax-analysis' | 'expenses' | 'budget' | 'income';
-  onNavigate: (page: 'dashboard' | 'portfolio' | 'tax-analysis' | 'expenses' | 'budget' | 'income') => void;
+  currentPage: 'dashboard' | 'portfolio' | 'expenses' | 'budget' | 'income';
+  onNavigate: (page: 'dashboard' | 'portfolio' | 'expenses' | 'budget' | 'income') => void;
 }
 
 export function Navbar({ currentPage, onNavigate }: NavbarProps) {
@@ -14,7 +14,6 @@ export function Navbar({ currentPage, onNavigate }: NavbarProps) {
     { id: 'expenses' as const, label: 'Expenses', icon: PiggyBank },
     { id: 'budget' as const, label: 'Budget', icon: Calculator },
     { id: 'portfolio' as const, label: 'Portfolio', icon: Wallet },
-    { id: 'tax-analysis' as const, label: 'Tax Analysis', icon: TrendingDown },
   ];
 
   const handleLogout = async () => {

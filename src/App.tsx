@@ -10,13 +10,12 @@ import { Layout } from './components/shared/Layout';
 import { Navbar } from './components/shared/Navbar';
 import { Dashboard } from './pages/Dashboard';
 import { PortfolioPage } from './pages/PortfolioPage';
-import { TaxAnalysisPage } from './pages/TaxAnalysisPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { BudgetPage } from './pages/BudgetPage';
 import { IncomePage } from './pages/IncomePage';
 import { LoginForm } from './components/auth/LoginForm';
 
-type PageType = 'dashboard' | 'portfolio' | 'tax-analysis' | 'expenses' | 'budget' | 'income';
+type PageType = 'dashboard' | 'portfolio' | 'expenses' | 'budget' | 'income';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
@@ -79,8 +78,6 @@ function App() {
         return <Dashboard onNavigate={(page) => setCurrentPage(page)} />;
       case 'portfolio':
         return <PortfolioPage />;
-      case 'tax-analysis':
-        return <TaxAnalysisPage />;
       case 'expenses':
         return <ExpensesPage />;
       case 'budget':
